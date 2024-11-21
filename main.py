@@ -77,12 +77,13 @@ def click_continue_ok_wrong_number(phone_number):
 
         # If the 'Wrong number?' button is found, move number to OTP_Sent.json
         elif 'text="Wrong number?"' in ui_content or 'content-desc="Wrong number?"' in ui_content:
-            os.system('adb shell input tap 743 650')  # Try first coordinate for 'Wrong number?'
-            print("Tapped 'Wrong number?' button at coordinates: (743, 650)")
-            time.sleep(2)  # Wait for the UI to process
-
-            os.system('adb shell input tap 894 544')  # Try second coordinate for 'Wrong number?'
-            print("Tapped 'Wrong number?' button at coordinates: (894, 544)")
+            # Try the two coordinates for 'Wrong number?' button
+            wrong_number_coords = [(743, 650), (894, 544)]
+            for coords in wrong_number_coords:
+                x, y = coords
+                os.system(f'adb shell input tap {x} {y}')  # Try clicking the first set of coordinates
+                print(f"Tapped 'Wrong number?' button at coordinates: {coords}")
+                break  # Exit the loop once the button is clicked
             otp_sent_data.append(phone_number)
             print(f"Saved {phone_number} to OTP_Sent.json.")
             save_json_data("OTP_Sent.json", otp_sent_data)
