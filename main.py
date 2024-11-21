@@ -1,34 +1,19 @@
-from appium import webdriver
-from time import sleep
+import os
 
-# Desired capabilities
-desired_caps = {
-    "platformName": "Android",
-    "platformVersion": "13.5.0",
-    "deviceName": "1089137443002481",
-    "automationName": "UiAutomator2",
-    "appPackage": "com.whatsapp",
-    "appActivity": "com.whatsapp.Main",
-    "noReset": True,
-}
+def open_whatsapp():
+    # Launch WhatsApp
+    os.system("adb shell monkey -p com.whatsapp -c android.intent.category.LAUNCHER 1")
+    print("WhatsApp opened.")
 
-try:
-    print("Connecting to Appium server...")
-    driver = webdriver.Remote('http://127.0.0.1:4723/wd/hub', desired_caps)
-    print("Connection successful! WhatsApp should now open on your device.")
-    
-    # Wait for WhatsApp to load
-    sleep(5)
-    
-    print("Ready for interaction.")
+def click_agree_continue():
+    # Wait for WhatsApp to load and the EULA page to appear
+    os.system("adb shell sleep 3")
 
-except Exception as e:
-    print(f"An error occurred: {e}")
-    print("Ensure the Appium server is running, and desired capabilities are correct.")
+    # Tap the "Agree and Continue" button (replace with the correct resource ID)
+    resource_id_agree_button = "com.whatsapp:id/eula_accept"
+    os.system(f'adb shell input tap 540 2318')  # Tap coordinates: near the center of the button
+    print("Tapped 'Agree and Continue'.")
 
-finally:
-    try:
-        driver.quit()
-        print("Driver session ended.")
-    except NameError:
-        print("Driver was not initialized, skipping quit.")
+if __name__ == "__main__":
+    open_whatsapp()
+    click_agree_continue()
