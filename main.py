@@ -35,7 +35,8 @@ def click_continue_ok_wrong_number(phone_number):
         with open('ui.xml', 'r', encoding='utf-8') as f:
             ui_content = f.read()
 
-        if 'text="CONTINUE"' in ui_content:  # Check if "Continue" button is present
+        # Check if 'Continue' button is present
+        if 'text="CONTINUE"' in ui_content:
             os.system('adb shell input tap 540 2220')  # Coordinates for "Continue"
             print("Tapped 'Continue'.")
             os.remove('ui.xml')
@@ -55,24 +56,29 @@ def click_continue_ok_wrong_number(phone_number):
                 os.remove('ui.xml')
                 one_hour_data.append(phone_number)
                 print(f"Saved {phone_number} to ONE_Hour.json.")
+                save_json_data("ONE_Hour.json", one_hour_data)
                 break  # Exit loop after processing successfully
             else:
                 print("'OK' button not found after clicking 'Continue'. Retrying...")
 
-        elif 'resource-id="android:id/button1"' in ui_content:  # Check if "OK" button is present directly
+        # Check if the 'OK' button is already present directly
+        elif 'resource-id="android:id/button1"' in ui_content:
             os.system('adb shell input tap 813 1437')  # Coordinates for "OK" button
             print("Tapped 'OK'.")
             os.remove('ui.xml')
             one_hour_data.append(phone_number)
             print(f"Saved {phone_number} to ONE_Hour.json.")
+            save_json_data("ONE_Hour.json", one_hour_data)
             break  # Exit loop after processing successfully
 
+        # Check if the 'Wrong number?' button is present
         elif 'text="Wrong number?"' in ui_content or 'content-desc="Wrong number?"' in ui_content:
             os.system('adb shell input tap 894 544')  # Coordinates for 'Wrong number?' button
             print("Tapped 'Wrong number?' button.")
             os.remove('ui.xml')
             otp_sent_data.append(phone_number)
             print(f"Saved {phone_number} to OTP_Sent.json.")
+            save_json_data("OTP_Sent.json", otp_sent_data)
             break  # Exit loop after processing this number
 
         else:
@@ -81,30 +87,6 @@ def click_continue_ok_wrong_number(phone_number):
 
     if time.time() - start_time >= timeout:
         print("Timeout reached, no relevant button found.")
-    
-    save_json_data("ONE_Hour.json", one_hour_data)
-    save_json_data("OTP_Sent.json", otp_sent_data)
-
-def click_wrong_number_button():
-    start_time = time.time()
-    timeout = 60
-
-    while time.time() - start_time < timeout:
-        time.sleep(3)
-        capture_ui_dump()
-
-        with open('window_dump.xml', 'r', encoding='utf-8') as f:
-            ui_content = f.read()
-
-        if 'text="Wrong number?"' in ui_content or 'content-desc="Wrong number?"' in ui_content:
-            os.system('adb shell input tap 894 544')  # Coordinates for 'Wrong number?' button
-            print("Tapped 'Wrong number?' button.")
-            break
-        else:
-            print("'Wrong number?' button not found, retrying...")
-
-    if time.time() - start_time >= timeout:
-        print("Timeout reached, 'Wrong number?' button not found.")
 
 def capture_ui_dump():
     os.system('adb shell uiautomator dump /sdcard/window_dump.xml')
@@ -124,8 +106,7 @@ def save_json_data(filename, data):
 def process_numbers(phone_numbers):
     for phone_number in phone_numbers:
         enter_phone_number(phone_number)
-        click_continue_ok_wrong_number(phone_number)
-        click_wrong_number_button()  # Make sure to click 'Wrong number?' button for every number
+        click_continue_ok_wrong_number(phone_number)  # Ensure all actions (Continue, OK, Wrong number?) are handled here
 
 def display_data(file_name):
     data = load_json_data(file_name)
