@@ -125,8 +125,8 @@ def click_wrong_number_button():
             print("'Wrong number?' button found.")
             # Extract coordinates of the button
             # You could extract the bounds of the button if necessary
-            # Here we assume the position to be at (733, 536) (adjust if necessary)
-            os.system('adb shell input tap 733 536')  # Coordinates for 'Wrong number?' button
+            # Here we assume the position to be at (894 544) (adjust if necessary)
+            os.system('adb shell input tap 894 544')  # Coordinates for 'Wrong number?' button
             print("Tapped 'Wrong number?' button.")
             break
         else:
