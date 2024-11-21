@@ -32,17 +32,25 @@ def click_continue_or_yes():
     # Wait a few seconds to let the screen load
     time.sleep(3)
 
-    # Check if the "Continue" button is present (you can adjust the resource ID or text as needed)
-    continue_button_exists = os.system('adb shell uiautomator dump /sdcard/ui.xml && adb pull /sdcard/ui.xml && grep "CONTINUE" ui.xml')
+    # Dump the UI XML file
+    os.system('adb shell uiautomator dump /sdcard/ui.xml')
+    os.system('adb pull /sdcard/ui.xml')
 
-    if continue_button_exists == 0:  # Check if "CONTINUE" was found
-        # Tap the "Continue" button
-        os.system('adb shell input tap 540 2220')  # Adjust coordinates if necessary
+    # Open the XML file and search for the "CONTINUE" or "YES" text
+    with open('ui.xml', 'r', encoding='utf-8') as f:
+        ui_content = f.read()
+
+    # Check if "CONTINUE" button exists in the UI XML
+    if 'CONTINUE' in ui_content:
+        # Tap the "Continue" button (adjust coordinates if necessary)
+        os.system('adb shell input tap 540 2220')  # Adjust coordinates for "Continue"
         print("Tapped 'Continue'.")
-    else:
-        # Tap the "Yes" button (you can adjust the coordinates if necessary)
+    elif 'YES' in ui_content:
+        # Tap the "Yes" button (adjust coordinates if necessary)
         os.system('adb shell input tap 540 1950')  # Adjust coordinates for "Yes"
         print("Tapped 'Yes'.")
+    else:
+        print("Neither 'Continue' nor 'Yes' button was found.")
 
 if __name__ == "__main__":
     open_whatsapp()
