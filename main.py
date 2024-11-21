@@ -57,7 +57,7 @@ def click_continue_ok_wrong_number(phone_number):
                 one_hour_data.append(phone_number)
                 print(f"Saved {phone_number} to ONE_Hour.json.")
                 save_json_data("ONE_Hour.json", one_hour_data)
-                
+
                 # Re-check the UI for 'Wrong number?' after clicking OK
                 time.sleep(3)  # Give some time for UI to update
                 os.system('adb shell uiautomator dump /sdcard/ui.xml')
@@ -120,7 +120,6 @@ def click_continue_ok_wrong_number(phone_number):
 
     if time.time() - start_time >= timeout:
         print("Timeout reached, no relevant button found.")
-
 
 def capture_ui_dump():
     os.system('adb shell uiautomator dump /sdcard/window_dump.xml')
