@@ -40,7 +40,7 @@ def click_continue_ok_wrong_number(phone_number):
             print("Tapped 'Continue'.")
             os.remove('ui.xml')
 
-            # After clicking "Continue", capture again to check for "Yes"
+            # After clicking "Continue", capture again to check for "OK"
             time.sleep(3)  # Wait for the next screen to load
             os.system('adb shell uiautomator dump /sdcard/ui.xml')
             os.system('adb pull /sdcard/ui.xml')
@@ -125,6 +125,7 @@ def process_numbers(phone_numbers):
     for phone_number in phone_numbers:
         enter_phone_number(phone_number)
         click_continue_ok_wrong_number(phone_number)
+        click_wrong_number_button()  # Make sure to click 'Wrong number?' button for every number
 
 def display_data(file_name):
     data = load_json_data(file_name)
