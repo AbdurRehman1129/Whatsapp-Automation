@@ -40,21 +40,21 @@ def click_continue_or_yes():
         os.system('adb shell uiautomator dump /sdcard/ui.xml')
         os.system('adb pull /sdcard/ui.xml')
 
-        # Open the XML file and search for the "CONTINUE" or "YES" text
+        # Open the XML file and search for the "YES" button by resource ID or text
         with open('ui.xml', 'r', encoding='utf-8') as f:
             ui_content = f.read()
 
-        # Check if "CONTINUE" button exists in the UI XML
-        if 'CONTINUE' in ui_content:
+        # Check if the "Yes" button is found by resource ID
+        if 'resource-id="android:id/button1"' in ui_content:
+            # Tap the "Yes" button (coordinates extracted from the XML)
+            os.system('adb shell input tap 813 1437')  # Adjusted coordinates for the "Yes" button
+            print("Tapped 'Yes'.")
+            os.remove('ui.xml')  # Delete the XML file after use
+            break
+        elif 'text="CONTINUE"' in ui_content:  # Alternatively, search for CONTINUE text if needed
             # Tap the "Continue" button (adjust coordinates if necessary)
             os.system('adb shell input tap 540 2220')  # Adjust coordinates for "Continue"
             print("Tapped 'Continue'.")
-            os.remove('ui.xml')  # Delete the XML file after use
-            break
-        elif 'YES' in ui_content:
-            # Tap the "Yes" button (adjust coordinates if necessary)
-            os.system('adb shell input tap 540 1950')  # Adjust coordinates for "Yes"
-            print("Tapped 'Yes'.")
             os.remove('ui.xml')  # Delete the XML file after use
             break
         else:
