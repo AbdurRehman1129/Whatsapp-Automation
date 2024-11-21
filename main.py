@@ -3,32 +3,29 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-# Desired capabilities for Appium
+# Desired capabilities
 desired_caps = {
-    "platformName": "Android",  # Change to "iOS" for iPhone
-    "deviceName": "YourDeviceName",  # Replace with your device name
-    "automationName": "UiAutomator2",  # Use "XCUITest" for iOS
-    "appPackage": "com.whatsapp",  # WhatsApp package name
-    "appActivity": "com.whatsapp.Main",  # WhatsApp main activity
-    "noReset": True,  # Keeps the app in its current state
+    "platformName": "Android",
+    "deviceName": "Android Emulator",  # Replace with your device name
+    "automationName": "UiAutomator2",
+    "appPackage": "com.whatsapp",
+    "appActivity": "com.whatsapp.Main",
+    "noReset": True,
 }
 
 # Connect to Appium server
 driver = webdriver.Remote("http://localhost:4723/wd/hub", desired_caps)
 
 try:
-    # Wait until the login page loads
+    # Wait for the phone number input field
     wait = WebDriverWait(driver, 30)
-    login_input = wait.until(EC.presence_of_element_located((By.ID, "com.whatsapp:id/registration_phone")))
-    
-    # Enter phone number
-    phone_number = "1234567890"  # Replace with your phone number
-    login_input.send_keys(phone_number)
+    phone_input = wait.until(EC.presence_of_element_located((By.ID, "com.whatsapp:id/registration_phone")))
 
-    # Submit phone number (optional, uncomment if needed)
-    # driver.find_element(By.ID, "com.whatsapp:id/next_button").click()
+    # Enter phone number
+    phone_number = "1234567890"  # Replace with the phone number
+    phone_input.send_keys(phone_number)
 
     print("Phone number entered successfully!")
 finally:
-    # Close the driver
+    # Quit the driver
     driver.quit()
