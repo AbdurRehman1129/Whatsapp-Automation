@@ -1,5 +1,6 @@
 import os
 import time
+import json
 
 def clear_screen():
     os.system('clear' if os.name == 'posix' else 'cls')  # Clear screen for Linux/Mac or Windows
@@ -100,33 +101,76 @@ def capture_ui_dump():
     os.system('adb pull /sdcard/window_dump.xml .')
     print("UI dump captured.")
 
+def load_json_data(filename):
+    if os.path.exists(filename):
+        with open(filename, 'r') as file:
+            return json.load(file)
+    return []
+
+def save_json_data(filename, data):
+    with open(filename, 'w') as file:
+        json.dump(data, file, indent=4)
+
 def process_numbers(phone_numbers):
+    one_hour_data = load_json_data("ONE_Hour.json")
+    otp_sent_data = load_json_data("OTP_Sent.json")
+    
     for phone_number in phone_numbers:
         enter_phone_number(phone_number)
         click_continue_or_yes()
 
         if click_ok_button():
-            with open("ONE_Hour.txt", "a") as file:
-                file.write(phone_number + "\n")
-            print(f"Saved {phone_number} to ONE_Hour.txt.")
+            one_hour_data.append(phone_number)
+            print(f"Saved {phone_number} to ONE_Hour.json.")
         else:
-            with open("OTP_Sent.txt", "a") as file:
-                file.write(phone_number + "\n")
-            print(f"Saved {phone_number} to OTP_Sent.txt.")
+            otp_sent_data.append(phone_number)
+            print(f"Saved {phone_number} to OTP_Sent.json.")
 
         click_wrong_number_button()
 
-def main():
-    clear_screen()
-    
-    # Ask user for multiple phone numbers separated by commas
-    phone_numbers_input = input("Enter phone numbers separated by commas: ").strip()
-    phone_numbers = [number.strip() for number in phone_numbers_input.split(',')]
-    
-    open_whatsapp()
-    click_agree_continue()
+    save_json_data("ONE_Hour.json", one_hour_data)
+    save_json_data("OTP_Sent.json", otp_sent_data)
 
-    process_numbers(phone_numbers)
+def display_data(file_name):
+    data = load_json_data(file_name)
+    print(f"\nDisplaying data from {file_name}:")
+    for index, number in enumerate(data, start=1):
+        print(f"{index}. {number}")
+    print(f"\nTotal: {len(data)} numbers.")
+
+def main():
+    while True:
+        clear_screen()
+        
+        print("Select an option:")
+        print("1. Enter phone numbers")
+        print("2. Display One Hour numbers")
+        print("3. Display OTP Sent numbers")
+        print("4. Exit")
+        
+        choice = input("Enter your choice (1/2/3/4): ").strip()
+        
+        if choice == '1':
+            phone_numbers_input = input("Enter phone numbers separated by commas: ").strip()
+            phone_numbers = [number.strip() for number in phone_numbers_input.split(',')]
+            open_whatsapp()
+            click_agree_continue()
+            process_numbers(phone_numbers)
+        
+        elif choice == '2':
+            display_data("ONE_Hour.json")
+            input("Press Enter to return to the menu...")
+        
+        elif choice == '3':
+            display_data("OTP_Sent.json")
+            input("Press Enter to return to the menu...")
+        
+        elif choice == '4':
+            print("Exiting the program.")
+            break
+        
+        else:
+            print("Invalid choice. Please select a valid option.")
 
 if __name__ == "__main__":
     main()
