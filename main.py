@@ -1,79 +1,73 @@
 import os
 import time
 
-def check_and_click_ok():
-    # Check if "OK" button exists for one-hour wait message
-    os.system("adb shell uiautomator dump /sdcard/ui.xml")
-    os.system("adb pull /sdcard/ui.xml ./ui.xml")
-    
-    with open("ui.xml", "r") as file:
-        xml_content = file.read()
-        
-        if 'resource-id="android:id/button1"' in xml_content and 'text="OK"' in xml_content:  # Check for "OK" button
-            print("Found 'OK' button, clicking it...")
-            os.system('adb shell input tap 817 1410')  # Coordinates for "OK" button (Adjust if needed)
-            return True
-        elif 'We couldn\'t send an SMS to your number.' in xml_content:  # If 1-hour message appears
-            print("OTP send failed, saving number to OTP_sent.txt")
-            return False
-    return False
+def open_whatsapp():
+    # Launch WhatsApp
+    os.system("adb shell monkey -p com.whatsapp -c android.intent.category.LAUNCHER 1")
+    print("WhatsApp opened.")
 
-def click_wrong_number():
-    # Check and click the "Wrong Number" button
-    os.system("adb shell uiautomator dump /sdcard/ui.xml")
-    os.system("adb pull /sdcard/ui.xml ./ui.xml")
-    
-    with open("ui.xml", "r") as file:
-        xml_content = file.read()
-        
-        if 'text="Wrong number?"' in xml_content:  # Check for "Wrong number?" text
-            print("Found 'Wrong Number' button, clicking it...")
-            os.system('adb shell input tap 540 1950')  # Adjust coordinates for "Wrong Number" button
-            return True
-    return False
-
-def write_number_to_file(phone_number):
-    # Write the number to OTP_sent.txt
-    with open("OTP_sent.txt", "a") as file:
-        file.write(f"{phone_number}\n")
-    print(f"Number {phone_number} saved to OTP_sent.txt.")
+def click_agree_continue():
+    # Wait for WhatsApp to load and the EULA page to appear
+    time.sleep(3)
+    # Tap the "Agree and Continue" button (coordinates or resource ID)
+    os.system('adb shell input tap 540 2318')  # Adjust if necessary
+    print("Tapped 'Agree and Continue'.")
 
 def enter_phone_number():
-    phone_number = input("Please enter the phone number: ")
+    # Ask the user for the phone number
+    phone_number = input("Please enter your phone number: ")
     
     # Wait for the phone number page to appear
-    os.system("adb shell sleep 3")
+    time.sleep(3)
     
-    # Enter the phone number
+    # Enter the phone number (replace with the correct resource ID)
     os.system(f'adb shell input text "{phone_number}"')
     print(f"Entered phone number: {phone_number}")
     
     # Tap the "Next" button using coordinates (adjust if necessary)
     os.system('adb shell input tap 540 1585')  # Adjust coordinates for "Next"
     print("Tapped 'Next'.")
-    return phone_number
 
-def process_number():
-    phone_number = enter_phone_number()
+def handle_ok_or_wrong_number():
+    start_time = time.time()  # Record the start time
+    timeout = 60  # Set timeout period to 60 seconds
 
-    # Check if the OTP is sent (i.e., one hour has passed)
-    if check_and_click_ok():
-        write_number_to_file(phone_number)
-        click_wrong_number()
-        return True
-    return False
+    while time.time() - start_time < timeout:
+        # Wait a few seconds to let the screen load
+        time.sleep(3)
 
-def main():
-    while True:
-        if not process_number():
-            print("Failed to process the number. Please try again.")
-            continue
-        
-        # Ask the user if they want to send another number
-        repeat = input("Do you want to enter another number? (yes/no): ").strip().lower()
-        if repeat != "yes":
+        # Dump the UI XML file
+        os.system('adb shell uiautomator dump /sdcard/ui.xml')
+        os.system('adb pull /sdcard/ui.xml')
+
+        # Open the XML file and search for specific elements by resource ID or text
+        with open('ui.xml', 'r', encoding='utf-8') as f:
+            ui_content = f.read()
+
+        # Check for the "OK" button (1-hour wait page)
+        if 'resource-id="android:id/button1"' in ui_content and 'text="OK"' in ui_content:
+            os.system('adb shell input tap 813 1437')  # Adjusted coordinates for "OK"
+            print("Tapped 'OK' on 1-hour wait page.")
+            os.remove('ui.xml')  # Delete the XML file after use
             break
-    print("Process completed.")
+
+        # Check for the "Wrong number?" button
+        elif 'resource-id="com.whatsapp:id/send_code_description"' in ui_content and 'content-desc="Wrong number?"' in ui_content:
+            os.system('adb shell input tap 540 566')  # Adjusted coordinates for "Wrong number?"
+            print("Tapped 'Wrong number?'.")
+            os.remove('ui.xml')  # Delete the XML file after use
+            break
+
+        else:
+            # Delete the XML file if no button was found
+            os.remove('ui.xml')
+            print("Neither 'OK' nor 'Wrong number?' button found, retrying...")
+
+    if time.time() - start_time >= timeout:
+        print("Timeout reached, no button found.")
 
 if __name__ == "__main__":
-    main()
+    open_whatsapp()
+    click_agree_continue()
+    enter_phone_number()
+    handle_ok_or_wrong_number()
