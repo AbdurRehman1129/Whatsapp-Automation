@@ -40,7 +40,7 @@ def click_continue_or_yes():
         os.system('adb shell uiautomator dump /sdcard/ui.xml')
         os.system('adb pull /sdcard/ui.xml')
 
-        # Open the XML file and search for the "YES" button by resource ID or text
+        # Open the XML file and search for the "YES" or "CONTINUE" button by resource ID or text
         with open('ui.xml', 'r', encoding='utf-8') as f:
             ui_content = f.read()
 
@@ -65,8 +65,40 @@ def click_continue_or_yes():
     if time.time() - start_time >= timeout:
         print("Timeout reached, no button found.")
 
+def click_ok_button():
+    start_time = time.time()  # Record the start time
+    timeout = 60  # Set timeout period to 60 seconds
+
+    while time.time() - start_time < timeout:
+        # Wait a few seconds to let the screen load
+        time.sleep(3)
+
+        # Dump the UI XML file
+        os.system('adb shell uiautomator dump /sdcard/ui.xml')
+        os.system('adb pull /sdcard/ui.xml')
+
+        # Open the XML file and search for the "OK" button by resource ID or text
+        with open('ui.xml', 'r', encoding='utf-8') as f:
+            ui_content = f.read()
+
+        # Check if the "OK" button is found by resource ID
+        if 'resource-id="android:id/button1"' in ui_content:
+            # Tap the "OK" button (coordinates extracted from the XML)
+            os.system('adb shell input tap 813 1437')  # Adjusted coordinates for the "OK" button
+            print("Tapped 'OK' button.")
+            os.remove('ui.xml')  # Delete the XML file after use
+            break
+        else:
+            # Delete the XML file if no button was found
+            os.remove('ui.xml')
+            print("'OK' button not found, retrying...")
+
+    if time.time() - start_time >= timeout:
+        print("Timeout reached, 'OK' button not found.")
+
 if __name__ == "__main__":
     open_whatsapp()
     click_agree_continue()
     enter_phone_number()
     click_continue_or_yes()
+    click_ok_button()  # Handle the "OK" button
