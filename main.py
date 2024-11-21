@@ -1,72 +1,54 @@
-import os
 import time
+import os
 
-def open_whatsapp():
-    # Launch WhatsApp
-    os.system("adb shell monkey -p com.whatsapp -c android.intent.category.LAUNCHER 1")
-    print("WhatsApp opened.")
+# Function to check and click the "OK" button if the one-hour waiting page is shown
+def click_ok_if_waiting():
+    # Check for the "We couldn't send an SMS" text
+    if exists(resourceId="android:id/message", text="We couldn't send an SMS to your number"):
+        # Wait for the OK button to appear
+        wait_for_element(resourceId="android:id/button1", timeout=5)
+        click(resourceId="android:id/button1")
+        return True
+    return False
 
-def click_agree_continue():
-    # Wait for WhatsApp to load and the EULA page to appear
-    time.sleep(3)
-    # Tap the "Agree and Continue" button (coordinates or resource ID)
-    os.system('adb shell input tap 540 2318')  # Adjust if necessary
-    print("Tapped 'Agree and Continue'.")
+# Function to click the "Wrong number?" button
+def click_wrong_number():
+    # Wait for "Wrong number?" button to appear and click it
+    wait_for_element(resourceId="com.whatsapp:id/send_code_description", text="Wrong number?", timeout=5)
+    click(resourceId="com.whatsapp:id/send_code_description")
 
-def enter_phone_number():
-    # Ask the user for the phone number
-    phone_number = input("Please enter your phone number: ")
+# Function to enter the number and proceed
+def enter_number_and_proceed(number):
+    # Enter the phone number in the input field
+    send_keys(resourceId="com.whatsapp:id/phone_number_input", text=number)
+    time.sleep(1)
     
-    # Wait for the phone number page to appear
-    time.sleep(3)
+    # Click the Next button
+    click(resourceId="com.whatsapp:id/next_button")
     
-    # Enter the phone number (replace with the correct resource ID)
-    os.system(f'adb shell input text "{phone_number}"')
-    print(f"Entered phone number: {phone_number}")
-    
-    # Tap the "Next" button using coordinates (adjust if necessary)
-    os.system('adb shell input tap 540 1585')  # Adjust coordinates for "Next"
-    print("Tapped 'Next'.")
+    # Handle the waiting page if it appears
+    if click_ok_if_waiting():
+        # Log the number that needs to wait for OTP
+        with open("OTP_sent.txt", "a") as f:
+            f.write(f"{number}\n")
 
-def click_continue_or_yes():
-    start_time = time.time()  # Record the start time
-    timeout = 60  # Set timeout period to 60 seconds
+# Main loop for handling multiple numbers
+def process_numbers(numbers):
+    for number in numbers:
+        print(f"Processing number: {number}")
+        
+        # Enter the number and proceed
+        enter_number_and_proceed(number)
+        
+        # Click the wrong number button to continue the process
+        click_wrong_number()
+        
+        # Prompt to continue with the next number
+        input("Press Enter to send the next number...")
 
-    while time.time() - start_time < timeout:
-        # Wait a few seconds to let the screen load
-        time.sleep(3)
-
-        # Dump the UI XML file
-        os.system('adb shell uiautomator dump /sdcard/ui.xml')
-        os.system('adb pull /sdcard/ui.xml')
-
-        # Open the XML file and search for the "YES" button by resource ID or text
-        with open('ui.xml', 'r', encoding='utf-8') as f:
-            ui_content = f.read()
-
-        # Check if the "Yes" button is found by resource ID
-        if 'resource-id="android:id/button1"' in ui_content:
-            # Tap the "Yes" button (coordinates extracted from the XML)
-            os.system('adb shell input tap 813 1437')  # Adjusted coordinates for the "Yes" button
-            print("Tapped 'Yes'.")
-            os.remove('ui.xml')  # Delete the XML file after use
-            break
-        elif 'text="CONTINUE"' in ui_content:  # Alternatively, search for CONTINUE text if needed
-            # Tap the "Continue" button (adjust coordinates if necessary)
-            os.system('adb shell input tap 540 2220')  # Adjust coordinates for "Continue"
-            print("Tapped 'Continue'.")
-            os.remove('ui.xml')  # Delete the XML file after use
-            break
-        else:
-            # Delete the XML file if no button was found
-            os.remove('ui.xml')
-            print("Neither 'Continue' nor 'Yes' button found, retrying...")
-
-    if time.time() - start_time >= timeout:
-        print("Timeout reached, no button found.")
-
+# Example usage
 if __name__ == "__main__":
-    open_whatsapp()
-    click_agree_continue()
-    enter_phone_number()
-    click_continue_or_yes()
+    # List of numbers to process
+    numbers = ["+994409632322", "+994409632323"]
+    
+    process_numbers(numbers)
