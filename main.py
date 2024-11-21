@@ -8,11 +8,17 @@ desired_caps = {
     'deviceName': 'Android Emulator',  # Replace with your device name or ID
     'appPackage': 'com.whatsapp',
     'appActivity': 'com.whatsapp.Main',
-    'noReset': True
+    'noReset': True,  # Ensure app state is maintained between sessions
+    'appiumVersion': '1.22.0',  # Add Appium version if needed
 }
 
 # Start an Appium session and connect to the device
-driver = webdriver.Remote('http://localhost:4723/wd/hub', desired_caps)
+try:
+    driver = webdriver.Remote('http://localhost:4723/wd/hub', desired_caps)
+    print("Appium session started successfully.")
+except Exception as e:
+    print(f"Error: {e}")
+    exit()
 
 def select_resend_sms_and_continue():
     # Wait for the screen to load (adjust the sleep time as needed)
