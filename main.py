@@ -96,6 +96,12 @@ def click_ok_button():
     if time.time() - start_time >= timeout:
         print("Timeout reached, 'OK' button not found.")
 
+def capture_ui_dump():
+    # Capture the UI dump using ADB
+    os.system('adb shell uiautomator dump /sdcard/window_dump.xml')
+    os.system('adb pull /sdcard/window_dump.xml .')
+    print("UI dump captured and saved as window_dump.xml.")
+
 def click_wrong_number_button():
     start_time = time.time()  # Record the start time
     timeout = 60  # Set timeout period to 60 seconds
@@ -104,24 +110,26 @@ def click_wrong_number_button():
         # Wait a few seconds to let the screen load
         time.sleep(3)
 
-        # Dump the UI XML file again after handling previous buttons
-        os.system('adb shell uiautomator dump /sdcard/ui.xml')
-        os.system('adb pull /sdcard/ui.xml')
+        # Capture the UI dump again after handling previous buttons
+        capture_ui_dump()
 
-        # Open the XML file and search for the "Wrong number?" button by text
-        with open('ui.xml', 'r', encoding='utf-8') as f:
+        # Open the window_dump.xml file and search for the "Wrong number?" button
+        with open('window_dump.xml', 'r', encoding='utf-8') as f:
             ui_content = f.read()
 
-        # Check if the "Wrong number?" button is found
-        if 'text="Wrong number?"' in ui_content:
-            # Tap the "Wrong number?" button (coordinates extracted from the XML)
-            os.system('adb shell input tap 540 511')  # Adjusted coordinates for the "Wrong number?" button
+        # Debugging: print part of the XML content to verify
+        print("Checking UI XML for 'Wrong number?' button...")
+
+        # Check if the "Wrong number?" button is found by either text or content-desc
+        if 'text="Wrong number?"' in ui_content or 'content-desc="Wrong number?"' in ui_content:
+            print("'Wrong number?' button found.")
+            # Extract coordinates of the button
+            # You could extract the bounds of the button if necessary
+            # Here we assume the position to be at (733, 536) (adjust if necessary)
+            os.system('adb shell input tap 733 536')  # Coordinates for 'Wrong number?' button
             print("Tapped 'Wrong number?' button.")
-            os.remove('ui.xml')  # Delete the XML file after use
             break
         else:
-            # Delete the XML file if no button was found
-            os.remove('ui.xml')
             print("'Wrong number?' button not found, retrying...")
 
     if time.time() - start_time >= timeout:
