@@ -104,7 +104,7 @@ def click_wrong_number_button():
         # Wait a few seconds to let the screen load
         time.sleep(3)
 
-        # Dump the UI XML file
+        # Dump the UI XML file again after handling previous buttons
         os.system('adb shell uiautomator dump /sdcard/ui.xml')
         os.system('adb pull /sdcard/ui.xml')
 
