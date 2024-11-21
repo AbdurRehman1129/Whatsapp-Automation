@@ -96,9 +96,41 @@ def click_ok_button():
     if time.time() - start_time >= timeout:
         print("Timeout reached, 'OK' button not found.")
 
+def click_wrong_number_button():
+    start_time = time.time()  # Record the start time
+    timeout = 60  # Set timeout period to 60 seconds
+
+    while time.time() - start_time < timeout:
+        # Wait a few seconds to let the screen load
+        time.sleep(3)
+
+        # Dump the UI XML file
+        os.system('adb shell uiautomator dump /sdcard/ui.xml')
+        os.system('adb pull /sdcard/ui.xml')
+
+        # Open the XML file and search for the "Wrong number?" button by text
+        with open('ui.xml', 'r', encoding='utf-8') as f:
+            ui_content = f.read()
+
+        # Check if the "Wrong number?" button is found
+        if 'text="Wrong number?"' in ui_content:
+            # Tap the "Wrong number?" button (coordinates extracted from the XML)
+            os.system('adb shell input tap 540 511')  # Adjusted coordinates for the "Wrong number?" button
+            print("Tapped 'Wrong number?' button.")
+            os.remove('ui.xml')  # Delete the XML file after use
+            break
+        else:
+            # Delete the XML file if no button was found
+            os.remove('ui.xml')
+            print("'Wrong number?' button not found, retrying...")
+
+    if time.time() - start_time >= timeout:
+        print("Timeout reached, 'Wrong number?' button not found.")
+
 if __name__ == "__main__":
     open_whatsapp()
     click_agree_continue()
     enter_phone_number()
     click_continue_or_yes()
     click_ok_button()  # Handle the "OK" button
+    click_wrong_number_button()  # Handle the "Wrong number?" button
