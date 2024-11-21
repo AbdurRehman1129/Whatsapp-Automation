@@ -44,14 +44,14 @@ def handle_yes_or_continue():
         with open('ui.xml', 'r', encoding='utf-8') as f:
             ui_content = f.read()
 
-        # Check for the "Yes" button
+        # Check for the "YES" button using resource ID and text
         if 'resource-id="android:id/button1"' in ui_content and 'text="YES"' in ui_content:
             os.system('adb shell input tap 813 1437')  # Adjusted coordinates for "Yes"
             print("Tapped 'Yes'.")
             os.remove('ui.xml')  # Delete the XML file after use
             return True
 
-        # Check for the "Continue" button
+        # Check for the "CONTINUE" button using resource ID and text
         elif 'resource-id="com.whatsapp:id/submit"' in ui_content and 'text="CONTINUE"' in ui_content:
             os.system('adb shell input tap 540 2220')  # Adjusted coordinates for "Continue"
             print("Tapped 'Continue'.")
