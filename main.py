@@ -29,28 +29,41 @@ def enter_phone_number():
     print("Tapped 'Next'.")
 
 def click_continue_or_yes():
-    # Wait a few seconds to let the screen load
-    time.sleep(3)
+    start_time = time.time()  # Record the start time
+    timeout = 60  # Set timeout period to 60 seconds
 
-    # Dump the UI XML file
-    os.system('adb shell uiautomator dump /sdcard/ui.xml')
-    os.system('adb pull /sdcard/ui.xml')
+    while time.time() - start_time < timeout:
+        # Wait a few seconds to let the screen load
+        time.sleep(3)
 
-    # Open the XML file and search for the "CONTINUE" or "YES" text
-    with open('ui.xml', 'r', encoding='utf-8') as f:
-        ui_content = f.read()
+        # Dump the UI XML file
+        os.system('adb shell uiautomator dump /sdcard/ui.xml')
+        os.system('adb pull /sdcard/ui.xml')
 
-    # Check if "CONTINUE" button exists in the UI XML
-    if 'CONTINUE' in ui_content:
-        # Tap the "Continue" button (adjust coordinates if necessary)
-        os.system('adb shell input tap 540 2220')  # Adjust coordinates for "Continue"
-        print("Tapped 'Continue'.")
-    elif 'YES' in ui_content:
-        # Tap the "Yes" button (adjust coordinates if necessary)
-        os.system('adb shell input tap 540 1950')  # Adjust coordinates for "Yes"
-        print("Tapped 'Yes'.")
-    else:
-        print("Neither 'Continue' nor 'Yes' button was found.")
+        # Open the XML file and search for the "CONTINUE" or "YES" text
+        with open('ui.xml', 'r', encoding='utf-8') as f:
+            ui_content = f.read()
+
+        # Check if "CONTINUE" button exists in the UI XML
+        if 'CONTINUE' in ui_content:
+            # Tap the "Continue" button (adjust coordinates if necessary)
+            os.system('adb shell input tap 540 2220')  # Adjust coordinates for "Continue"
+            print("Tapped 'Continue'.")
+            os.remove('ui.xml')  # Delete the XML file after use
+            break
+        elif 'YES' in ui_content:
+            # Tap the "Yes" button (adjust coordinates if necessary)
+            os.system('adb shell input tap 540 1950')  # Adjust coordinates for "Yes"
+            print("Tapped 'Yes'.")
+            os.remove('ui.xml')  # Delete the XML file after use
+            break
+        else:
+            # Delete the XML file if no button was found
+            os.remove('ui.xml')
+            print("Neither 'Continue' nor 'Yes' button found, retrying...")
+
+    if time.time() - start_time >= timeout:
+        print("Timeout reached, no button found.")
 
 if __name__ == "__main__":
     open_whatsapp()
