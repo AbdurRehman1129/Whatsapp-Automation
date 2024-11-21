@@ -135,6 +135,23 @@ def click_wrong_number_button():
     if time.time() - start_time >= timeout:
         print("Timeout reached, 'Wrong number?' button not found.")
 
+def try_another_number():
+    while True:
+        # Ask the user if they want to try another number
+        user_input = input("Do you want to try another number? (Y/N): ").strip().upper()
+
+        if user_input == "Y":
+            print("Please enter a new phone number.")
+            enter_phone_number()  # Re-enter the phone number and continue the process
+            click_continue_or_yes()
+            click_ok_button()  # Handle the "OK" button
+            click_wrong_number_button()  # Handle the "Wrong number?" button
+        elif user_input == "N":
+            print("Stopping the process.")
+            break  # Exit the loop and stop the process
+        else:
+            print("Invalid input. Please enter 'Y' for Yes or 'N' for No.")
+
 if __name__ == "__main__":
     open_whatsapp()
     click_agree_continue()
@@ -142,3 +159,4 @@ if __name__ == "__main__":
     click_continue_or_yes()
     click_ok_button()  # Handle the "OK" button
     click_wrong_number_button()  # Handle the "Wrong number?" button
+    try_another_number()  # Ask if the user wants to try another number
