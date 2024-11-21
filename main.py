@@ -28,7 +28,7 @@ def enter_phone_number():
     os.system('adb shell input tap 540 1585')  # Adjust coordinates for "Next"
     print("Tapped 'Next'.")
 
-def handle_yes_or_continue():
+def click_continue_or_yes():
     start_time = time.time()  # Record the start time
     timeout = 60  # Set timeout period to 60 seconds
 
@@ -40,67 +40,27 @@ def handle_yes_or_continue():
         os.system('adb shell uiautomator dump /sdcard/ui.xml')
         os.system('adb pull /sdcard/ui.xml')
 
-        # Open the XML file and search for specific elements by resource ID or text
+        # Open the XML file and search for the "YES" button by resource ID or text
         with open('ui.xml', 'r', encoding='utf-8') as f:
             ui_content = f.read()
 
-        # Check for the "YES" button using resource ID and text
-        if 'resource-id="android:id/button1"' in ui_content and 'text="YES"' in ui_content:
-            os.system('adb shell input tap 813 1437')  # Adjusted coordinates for "Yes"
+        # Check if the "Yes" button is found by resource ID
+        if 'resource-id="android:id/button1"' in ui_content:
+            # Tap the "Yes" button (coordinates extracted from the XML)
+            os.system('adb shell input tap 813 1437')  # Adjusted coordinates for the "Yes" button
             print("Tapped 'Yes'.")
             os.remove('ui.xml')  # Delete the XML file after use
-            return True
-
-        # Check for the "CONTINUE" button using resource ID and text
-        elif 'resource-id="com.whatsapp:id/submit"' in ui_content and 'text="CONTINUE"' in ui_content:
-            os.system('adb shell input tap 540 2220')  # Adjusted coordinates for "Continue"
+            break
+        elif 'text="CONTINUE"' in ui_content:  # Alternatively, search for CONTINUE text if needed
+            # Tap the "Continue" button (adjust coordinates if necessary)
+            os.system('adb shell input tap 540 2220')  # Adjust coordinates for "Continue"
             print("Tapped 'Continue'.")
             os.remove('ui.xml')  # Delete the XML file after use
-            return True
-
+            break
         else:
             # Delete the XML file if no button was found
             os.remove('ui.xml')
-            print("Neither 'Yes' nor 'Continue' button found, retrying...")
-
-    if time.time() - start_time >= timeout:
-        print("Timeout reached, no button found.")
-        return False
-
-def handle_ok_or_wrong_number():
-    start_time = time.time()  # Record the start time
-    timeout = 60  # Set timeout period to 60 seconds
-
-    while time.time() - start_time < timeout:
-        # Wait a few seconds to let the screen load
-        time.sleep(3)
-
-        # Dump the UI XML file
-        os.system('adb shell uiautomator dump /sdcard/ui.xml')
-        os.system('adb pull /sdcard/ui.xml')
-
-        # Open the XML file and search for specific elements by resource ID or text
-        with open('ui.xml', 'r', encoding='utf-8') as f:
-            ui_content = f.read()
-
-        # Check for the "OK" button (1-hour wait page)
-        if 'resource-id="android:id/button1"' in ui_content and 'text="OK"' in ui_content:
-            os.system('adb shell input tap 813 1437')  # Adjusted coordinates for "OK"
-            print("Tapped 'OK' on 1-hour wait page.")
-            os.remove('ui.xml')  # Delete the XML file after use
-            break
-
-        # Check for the "Wrong number?" button
-        elif 'resource-id="com.whatsapp:id/send_code_description"' in ui_content and 'content-desc="Wrong number?"' in ui_content:
-            os.system('adb shell input tap 540 566')  # Adjusted coordinates for "Wrong number?"
-            print("Tapped 'Wrong number?'.")
-            os.remove('ui.xml')  # Delete the XML file after use
-            break
-
-        else:
-            # Delete the XML file if no button was found
-            os.remove('ui.xml')
-            print("Neither 'OK' nor 'Wrong number?' button found, retrying...")
+            print("Neither 'Continue' nor 'Yes' button found, retrying...")
 
     if time.time() - start_time >= timeout:
         print("Timeout reached, no button found.")
@@ -109,8 +69,4 @@ if __name__ == "__main__":
     open_whatsapp()
     click_agree_continue()
     enter_phone_number()
-
-    # First handle "Yes" or "Continue"
-    if handle_yes_or_continue():
-        # After handling "Yes" or "Continue", check for "OK" or "Wrong number?"
-        handle_ok_or_wrong_number()
+    click_continue_or_yes()
