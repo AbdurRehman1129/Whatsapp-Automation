@@ -3,14 +3,15 @@ from time import sleep
 
 # Desired capabilities
 desired_caps = {
-    "platformName": "Android",           # OS platform
+    "platformName": "Android",
+    "platformVersion": "13.5.0",          # Your Android version
     "deviceName": "1089137443002481",    # Your device ID
     "automationName": "UiAutomator2",    # Required automation framework
     "appPackage": "com.whatsapp",        # WhatsApp app package
     "appActivity": "com.whatsapp.Main",  # WhatsApp main activity
     "noReset": True,                     # Prevent resetting the app
-    "newCommandTimeout": 300             # Timeout to keep the session alive
 }
+
 
 try:
     print("Connecting to Appium server...")
@@ -20,14 +21,13 @@ try:
     # Wait for WhatsApp to load
     sleep(5)
 
-    # Add interactions here, if necessary
-    print("Ready for interaction with WhatsApp.")
+    print("Ready for interaction.")
 
 except Exception as e:
     print(f"An error occurred: {e}")
+    print("Ensure the Appium server is running, and desired capabilities are correct.")
 
 finally:
-    # Quit the driver only if it was initialized
     try:
         driver.quit()
         print("Driver session ended.")
