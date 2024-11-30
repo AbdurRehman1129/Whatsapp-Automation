@@ -126,5 +126,3 @@ This script is intended for educational and testing purposes only. Use it respon
 Happy Automating! 😊
 
 --- 
-
-Let me know if you'd like help creating a thumbnail or writing a script for your tutorial video!
