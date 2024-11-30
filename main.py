@@ -250,7 +250,7 @@ def check_and_click_wrong_number_button(max_retries=10, delay=4):
 # Main script execution
 
 
-open_whatsapp_business(10)
+open_whatsapp_business(11)
 click_agree_and_continue()
 numbers_input = input("Enter phone numbers separated by commas: ")
 phone_numbers = [number.strip() for number in numbers_input.split(",")]
