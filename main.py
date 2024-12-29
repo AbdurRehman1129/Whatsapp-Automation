@@ -1,268 +1,338 @@
-import subprocess
-import time
-import xml.etree.ElementTree as ET
+import os
+import re
+import json
+import argparse
 
+def clear_screen():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
-def open_whatsapp_business(work_profile_id):
-    package_name = "com.whatsapp.w4b"
-    activity_name = "com.whatsapp.Main"
-    subprocess.run(["adb", "shell", "am", "start", "--user", str(work_profile_id), "-n",
-                   f"{package_name}/{activity_name}"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    print("WhatsApp Business has been successfully launched in the work profile.")
-    time.sleep(3)
+# Function to save the setup configuration
+def save_setup(setup_name, setup_data):
+    setups = load_setups()
+    setups[setup_name] = setup_data
+    with open("setups.json", "w", encoding="utf-8") as f:
+        json.dump(setups, f, ensure_ascii=False, indent=4)
+    print(f"Setup '{setup_name}' saved successfully!")
 
+# Function to load all setups
+def load_setups():
+    if os.path.exists("setups.json"):
+        with open("setups.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
 
-def click_agree_and_continue():
+# Function to load a specific setup
+def load_setup_by_name(setup_name):
+    setups = load_setups()
+    if setup_name in setups:
+        return setups[setup_name]
+    else:
+        print(f"Setup '{setup_name}' not found!")
+        return None
+def setup_coordinates():
+    print("Please enter the coordinates for the following UI elements:")
+
+    # Collect the coordinates
+    setup_data = {
+        "agree_button": input("Agree button coordinates (x,y): ").strip(),
+        "number_input": input("Number Input field coordinates (x,y): ").strip(),
+        "next_button": input("Next button coordinates (x,y): ").strip(),
+        "yes_button": input("Yes button coordinates (x,y): ").strip(),
+        "ok_button": input("OK button coordinates (x,y): ").strip(),
+        "wrong_number_1": input("Wrong number button coordinates (x,y): ").strip(),
+        "wrong_number_2": input("Wrong number 2 button coordinates (x,y): ").strip(),
+        "continue_button": input("Continue button coordinates (x,y): ").strip()
+    }
+
+    setup_name = input("Enter a name for this setup: ").strip()
+    save_setup(setup_name, setup_data)
+
+def is_agree_button(device_id):
+    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
+    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
+    with open("window_dump.xml", "r", encoding="utf-8") as file:
+        xml_content = file.read()
+    return "com.whatsapp.w4b:id/eula_accept" in xml_content
+
+def is_input_phone_field(device_id):
+    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
+    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
+    with open("window_dump.xml", "r", encoding="utf-8") as file:
+        xml_content = file.read()
+    return "com.whatsapp.w4b:id/registration_phone" in xml_content
+
+def is_yes_button(device_id):
+    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
+    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
+    with open("window_dump.xml", "r", encoding="utf-8") as file:
+        xml_content = file.read()
+    return "android:id/button1" in xml_content and "Yes" in xml_content
+
+def is_connecting_bar(device_id):
+    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
+    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
+    with open("window_dump.xml", "r", encoding="utf-8") as file:
+        xml_content = file.read()
+    return "Connecting..." in xml_content
+
+def is_continue_button(device_id):
+    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
+    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
+    with open("window_dump.xml", "r", encoding="utf-8") as file:
+        xml_content = file.read()
+    return "com.whatsapp.w4b:id/primary_button" in xml_content and "CONTINUE" in xml_content
+
+def is_sending_bar(device_id):
+    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
+    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
+    with open("window_dump.xml", "r", encoding="utf-8") as file:
+        xml_content = file.read()
+    return "Sending code" in xml_content
+
+def is_one_hour(device_id):
+    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
+    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
+    with open("window_dump.xml", "r", encoding="utf-8") as file:
+        xml_content = file.read()
+    return "OK" in xml_content and "android:id/button1" in xml_content
+def is_wrong_number(device_id):
+    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
+    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
+    with open("window_dump.xml", "r", encoding="utf-8") as file:
+        xml_content = file.read()
+    if "Waiting to automatically detect" in xml_content and "Wrong number?" in xml_content:
+        return "Wrong Number 1"
+    elif "Can't send an SMS with your code because you've tried to register" in xml_content and "Wrong number?" in xml_content:
+        return "Wrong Number 2"
+    else:
+        return None
+    
+def click_button(button,setup_data,device_id):
+    agree_coords = tuple(map(int, setup_data["agree_button"].split(',')))
+    number_coords = tuple(map(int, setup_data["number_input"].split(',')))
+    next_coords = tuple(map(int, setup_data["next_button"].split(',')))
+    yes_coords = tuple(map(int, setup_data["yes_button"].split(',')))
+    ok_coords = tuple(map(int, setup_data["ok_button"].split(',')))
+    wrong_1_coords = tuple(map(int, setup_data["wrong_number_1"].split(',')))
+    wrong_2_coords = tuple(map(int, setup_data["wrong_number_2"].split(',')))
+    continue_coords = tuple(map(int, setup_data["continue_button"].split(',')))
+
+    if button == "agree_button":
+        print("Clicking the agree button...")
+        run_adb_command(f"adb -s {device_id} shell input tap {agree_coords[0]} {agree_coords[1]}")
+    elif button == "number_input":
+        print("Clicking the number input field...")
+        run_adb_command(f"adb -s {device_id} shell input tap {number_coords[0]} {number_coords[1]}")
+    elif button == "next_button":
+        print("Clicking the Next button...")
+        run_adb_command(f"adb -s {device_id} shell input tap {next_coords[0]} {next_coords[1]}")
+    elif button == "yes_button":
+        print("Clicking the Yes button...")
+        run_adb_command(f"adb -s {device_id} shell input tap {yes_coords[0]} {yes_coords[1]}")
+    elif button == "ok_button":
+        print("Clicking the OK button...")
+        run_adb_command(f"adb -s {device_id} shell input tap {ok_coords[0]} {ok_coords[1]}")
+    elif button == "wrong_number_1":
+        print("Clicking the Wrong Number...")
+        run_adb_command(f"adb -s {device_id} shell input tap {wrong_1_coords[0]} {wrong_1_coords[1]}")
+    elif button == "wrong_number_2":
+        print("Clicking the Wrong Number...")
+        run_adb_command(f"adb -s {device_id} shell input tap {wrong_2_coords[0]} {wrong_2_coords[1]}")
+    elif button == "continue_button":
+        print("Clicking the continue button...")
+        run_adb_command(f"adb -s {device_id} shell input tap {continue_coords[0]} {continue_coords[1]}")
+
+def run_adb_command(command):
+    return os.system(f"{command} >nul 2>&1")  # Redirect stdout to null, keep stderr
+
+def get_connected_devices():
+    devices_output = os.popen("adb devices").read()
+    devices = []
+    if devices_output:
+        for line in devices_output.split("\n")[1:]:
+            if line.strip():
+                parts = line.split("\t")
+                if len(parts) == 2 and parts[1] == "device":
+                    devices.append(parts[0])
+    return devices
+
+def check_work_profile(device_id):
     try:
-        subprocess.run(["adb", "shell", "input", "tap", "540", "2318"],
-                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        print("Successfully clicked the 'Agree and Continue' button.")
-    except subprocess.CalledProcessError as e:
-        print(f"Error occurred while clicking the button: {e}")
+        # Execute the ADB command for the specific device
+        output = os.popen(f"adb -s {device_id} shell pm list users").read()
+        
+        # Search for the work profile in the output
+        match = re.search(r'UserInfo\{(\d+):Work profile:\d+\}', output)
+        
+        if match:
+            # Extract the work profile ID
+            work_profile_id = match.group(1)
+            return work_profile_id
+        else:
+            return None  # No work profile found
+    
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+def open_whatsapp_business(device_id, work_profile_id=None):
+    if work_profile_id:
+        profile_prefix = f"--user {work_profile_id} "
+    else:
+        profile_prefix = ""
+
+    # Use 'am start' instead of 'monkey' for better control
+    command = f"adb -s {device_id} shell am start {profile_prefix}-n com.whatsapp.w4b/com.whatsapp.Main"
+    result = run_adb_command(command)  # Use the helper function here
+    if result == 0:
+        print("WhatsApp Business launched successfully.")
+    else:
+        print("Failed to launch WhatsApp Business.")
+
+# Function to handle device selection and WhatsApp launch
+#def main():
+    
+def check_and_click_agree_button(selected_device,setup_data):
+    while(True):
+        if is_agree_button(selected_device):
+            click_button("agree_button",setup_data,selected_device)
+            break
+def check_and_click_input_number(selected_device,setup_data):
+    while(True):
+        if is_input_phone_field(selected_device):
+            click_button("number_input",setup_data,selected_device)
+            break
+def enter_phone_number(selected_device,phone_number):
+    print(f"Entering phone number +994{phone_number}")
+    run_adb_command(f"adb -s {selected_device} shell input text {phone_number}")
+
+def click_next_button(selected_device,setup_data):
+    click_button("next_button",setup_data,selected_device)
+            
+def wait_for_connecting_bar_to_disappear(selected_device):
+    while(True):
+        if not is_connecting_bar(selected_device):
+            break
+
+def check_and_click_yes_button(selected_device,setup_data):
+    while(True):
+        if is_yes_button(selected_device):
+            click_button("yes_button",setup_data,selected_device)
+            break
+def check_and_click_continue_button(selected_device,setup_data):
+    
+    if is_continue_button(selected_device):
+        click_button("continue_button",setup_data,selected_device)
+    
+
+def wait_for_sending_bar_to_disappear(selected_device):
+    while(True):
+        if not is_sending_bar(selected_device):
+            break
+
+# Function to save the processed numbers
+def save_processed_number(phone_number):
+    file_name = "processed_numbers.json"
+    if os.path.exists(file_name):
+        with open(file_name, "r", encoding="utf-8") as f:
+            processed_numbers = json.load(f)
+    else:
+        processed_numbers = []
+
+    # Avoid duplicates
+    if phone_number not in processed_numbers:
+        processed_numbers.append(phone_number)
+        with open(file_name, "w", encoding="utf-8") as f:
+            json.dump(processed_numbers, f, ensure_ascii=False, indent=4)
+        print(f"Phone number +994{phone_number} saved to processed list.")
+
+# Update the check_if_one_hour_came function
+def check_if_one_hour_came(setup_data, selected_device, phone_number):
+    if is_one_hour(selected_device):
+        click_button("ok_button", setup_data, selected_device)
+    elif is_wrong_number(selected_device) == "Wrong Number 2":
+        print("Number was already tried....")
+    elif is_wrong_number(selected_device) == "Wrong Number 1":
+        print("OTP Sent....")
+        save_processed_number(phone_number)
 
 
-def enter_phone_number(phone_number, max_retries=10, delay=2):
-    retries = 0
-    phone_number_field_found = False
-    next_button_found = False
+def check_and_click_wrong_number(setup_data,selected_device):
+    if is_wrong_number(selected_device) == "Wrong Number 1":
+        click_button("wrong_number_1",setup_data,selected_device)
+    elif is_wrong_number(selected_device) == "Wrong Number 2":
+        click_button("wrong_number_2",setup_data,selected_device)
 
-    while retries < max_retries:
+
+def automate_login(selected_device,setup_data):
+    
+    check_and_click_agree_button(selected_device,setup_data)
+
+    phone_numbers = input("Enter phone numbers separated by commas: ").split(',')
+    phone_numbers = [phone_number.strip() for phone_number in phone_numbers if phone_number.strip()]
+    for index,phone_number in enumerate(phone_numbers,start=1):
+        clear_screen()
+        print(f"{index}. Processing phone number +994{phone_number}")
+        check_and_click_input_number(selected_device,setup_data)
+        enter_phone_number(selected_device,phone_number)
+        click_next_button(selected_device,setup_data)
+        wait_for_connecting_bar_to_disappear(selected_device)
+        check_and_click_yes_button(selected_device,setup_data)
+        check_and_click_continue_button(selected_device,setup_data)
+        wait_for_sending_bar_to_disappear(selected_device)
+        check_if_one_hour_came(setup_data,selected_device,phone_number)
+        check_and_click_wrong_number(setup_data,selected_device)
+
+
+if __name__ == "__main__":
+    clear_screen()
+    parser = argparse.ArgumentParser(description="Automate SafeUM login process.")
+    parser.add_argument("--setup", type=str, help="Specify the setup name to use.")
+    args = parser.parse_args()
+
+    # If a setup name is provided, load that setup
+    setup_data = None
+    if args.setup:
+        setup_data = load_setup_by_name(args.setup)
+        if setup_data:
+            print(f"Loaded setup '{args.setup}' successfully.")
+    
+    if setup_data is None:
+        # If no setup is provided or failed to load, ask the user to create a new one
+        print("No setup provided or failed to load, please create a new one.")
+        setup_coordinates()
+    
+    
+    devices = get_connected_devices()
+    if not devices:
+        print("No devices connected.")
+        
+    elif len(devices) == 1:
+        selected_device = devices[0]
+    else:
+        print("Connected devices:")
+        for i, device in enumerate(devices):
+            print(f"{i + 1}. {device}")
+        choice = input("Select a device (1, 2, ...): ").strip()
         try:
-            subprocess.run(["adb", "shell", "uiautomator", "dump"], check=True,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            subprocess.run(["adb", "pull", "/sdcard/window_dump.xml", "./window_dump.xml"],
-                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            selected_device = devices[int(choice) - 1]
+        except (IndexError, ValueError):
+            print("Invalid choice. Exiting.")
+            
 
-            tree = ET.parse('./window_dump.xml')
-            root = tree.getroot()
+    work_profile_id = check_work_profile(selected_device)
 
-            for node in root.iter("node"):
-                if node.attrib.get("resource-id") == "com.whatsapp.w4b:id/registration_phone":
-                    phone_number_field_found = True
-                    break
-
-            if phone_number_field_found:
-                subprocess.run(["adb", "shell", "input", "text", phone_number],
-                               check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                print(f"Phone number '{phone_number}' successfully entered.")
-
-                for node in root.iter("node"):
-                    if node.attrib.get("resource-id") == "com.whatsapp.w4b:id/registration_submit":
-                        next_button_found = True
-                        break
-
-                if next_button_found:
-                    subprocess.run(["adb", "shell", "input", "tap", "540", "1575"],
-                                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                    print("Successfully clicked the 'Next' button.")
-                    break
-                else:
-                    print(f"'Next' button not found. Attempt {
-                          retries + 1} of {max_retries}.")
-            else:
-                print(f"Phone number input field not found. Attempt {
-                      retries + 1} of {max_retries}.")
-
-        except subprocess.CalledProcessError as e:
-            print(f"Error during phone number entry. Attempt {
-                  retries + 1} of {max_retries}: {e}")
-        except Exception as e:
-            print(f"Unexpected error. Attempt {
-                  retries + 1} of {max_retries}: {e}")
-
-        retries += 1
-        time.sleep(delay)
-
-    if not phone_number_field_found:
-        print(f"Failed to locate the phone number input field after {
-              max_retries} attempts.")
-    if not next_button_found:
-        print(f"Failed to locate the 'Next' button after {
-              max_retries} attempts.")
+    if work_profile_id:
+        print(f"Work profile detected with ID: {work_profile_id}")
+        profile_choice = input("Open WhatsApp Business in (1) Main Profile or (2) Work Profile? ").strip()
+        if profile_choice == "2":
+            open_whatsapp_business(selected_device, work_profile_id)
+        else:
+            open_whatsapp_business(selected_device)
+    else:
+        print("No work profile detected. Launching WhatsApp Business in the main profile.")
+        open_whatsapp_business(selected_device)
 
 
-def click_yes_button(max_retries=10, delay=4):
-    retries = 0
-    yes_button_found = False
-
-    while retries < max_retries:
-        try:
-            subprocess.run(["adb", "shell", "uiautomator", "dump"], check=True,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            subprocess.run(["adb", "pull", "/sdcard/window_dump.xml", "./window_dump.xml"],
-                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-            tree = ET.parse('./window_dump.xml')
-            root = tree.getroot()
-
-            for node in root.iter("node"):
-                if node.attrib.get("resource-id") == "android:id/button1" and node.attrib.get("text") == "Yes":
-                    yes_button_found = True
-                    break
-
-            if yes_button_found:
-                subprocess.run(["adb", "shell", "input", "tap", "813", "1417"],
-                               check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                print("Successfully clicked the 'Yes' button.")
-                break
-            else:
-                print(f"'Yes' button not found. Attempt {
-                      retries + 1} of {max_retries}.")
-
-        except subprocess.CalledProcessError as e:
-            print(f"Error while clicking the 'Yes' button. Attempt {
-                  retries + 1} of {max_retries}: {e}")
-        except Exception as e:
-            print(f"Unexpected error while clicking the 'Yes' button. Attempt {
-                  retries + 1} of {max_retries}: {e}")
-
-        retries += 1
-        time.sleep(delay)
-
-    if not yes_button_found:
-        print(f"Failed to locate the 'Yes' button after {
-              max_retries} attempts.")
-
-
-wrong_number_pressed = False
-
-
-def check_and_click_continue_button(max_retries=10, delay=4):
-    global wrong_number_pressed
-    retries = 0
-    continue_button_found = False
-    error_message_found = False
-
-    while retries < max_retries:
-        try:
-            subprocess.run(["adb", "shell", "uiautomator", "dump"], check=True,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            subprocess.run(["adb", "pull", "/sdcard/window_dump.xml", "./window_dump.xml"],
-                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-            tree = ET.parse('./window_dump.xml')
-            root = tree.getroot()
-
-            wrong_number_button_found = False
-            for node in root.iter("node"):
-                if node.attrib.get("content-desc") == "Wrong number?":
-                    wrong_number_button_found = True
-                    break
-
-            if wrong_number_button_found:
-                subprocess.run(["adb", "shell", "input", "tap", "733", "366"],
-                               check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                subprocess.run(["adb", "shell", "input", "tap", "733", "511"],
-                               check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                print("Successfully clicked the 'Wrong number?' button.")
-                wrong_number_pressed = True
-                break
-
-            for node in root.iter("node"):
-                if node.attrib.get("resource-id") == "android:id/message" and node.attrib.get("text") == "We couldn't send an SMS to your number. Please check your number and try again in 1 hour.":
-                    error_message_found = True
-                    break
-
-            if error_message_found:
-                subprocess.run(["adb", "shell", "input", "tap", "813", "1417"],
-                               check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                print(
-                    "Successfully clicked the 'OK' button to dismiss the error message.")
-                break
-
-            for node in root.iter("node"):
-                if node.attrib.get("resource-id") == "com.whatsapp.w4b:id/primary_button" and node.attrib.get("text") == "CONTINUE":
-                    continue_button_found = True
-                    break
-
-            if continue_button_found:
-                subprocess.run(["adb", "shell", "input", "tap", "540", "2220"],
-                               check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                print("Successfully clicked the 'Continue' button.")
-            else:
-                print(f"'Continue' button not found. Attempt {
-                      retries + 1} of {max_retries}.")
-
-        except subprocess.CalledProcessError as e:
-            print(f"Error while checking for buttons. Attempt {
-                  retries + 1} of {max_retries}: {e}")
-        except Exception as e:
-            print(f"Unexpected error while checking for buttons. Attempt {
-                  retries + 1} of {max_retries}: {e}")
-
-        retries += 1
-        time.sleep(delay)
-
-    if not continue_button_found and not wrong_number_pressed:
-        print(f"Failed to locate 'Continue' or 'Wrong number?' buttons after {
-              max_retries} attempts.")
-
-
-def check_and_click_wrong_number_button(max_retries=10, delay=4):
-    global wrong_number_pressed
-    if wrong_number_pressed:
-        print("Skipping the 'Wrong number?' button click as it has already been pressed.")
-        return
-
-    retries = 0
-    while retries < max_retries:
-        try:
-            subprocess.run(["adb", "shell", "uiautomator", "dump"], check=True,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            subprocess.run(["adb", "pull", "/sdcard/window_dump.xml", "./window_dump.xml"],
-                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-            tree = ET.parse('./window_dump.xml')
-            root = tree.getroot()
-
-            wrong_number_button_found = False
-            for node in root.iter("node"):
-                if node.attrib.get("content-desc") == "Wrong number?":
-                    wrong_number_button_found = True
-                    break
-
-            if wrong_number_button_found:
-                subprocess.run(["adb", "shell", "input", "tap", "733", "366"],
-                               check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                subprocess.run(["adb", "shell", "input", "tap", "733", "511"],
-                               check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                print("Successfully clicked the 'Wrong number?' button.")
-                wrong_number_pressed = True
-                break
-            else:
-                print(f"'Wrong number?' button not found. Attempt {
-                      retries + 1} of {max_retries}.")
-
-        except subprocess.CalledProcessError as e:
-            print(f"Error while checking for the 'Wrong number?' button or error message. Attempt {
-                  retries + 1} of {max_retries}: {e}")
-        except Exception as e:
-            print(f"Unexpected error. Attempt {
-                  retries + 1} of {max_retries}: {e}")
-
-        retries += 1
-        time.sleep(delay)
-
-    if retries >= max_retries:
-        print(f"Failed to locate the 'Wrong number?' button after {
-              max_retries} attempts.")
-
-# Main script execution
-
-
-open_whatsapp_business(11)
-click_agree_and_continue()
-numbers_input = input("Enter phone numbers separated by commas: ")
-phone_numbers = [number.strip() for number in numbers_input.split(",")]
-
-for phone_number in phone_numbers:
-    print(f"\nProcessing phone number: {phone_number}")
-    wrong_number_pressed = False
-    enter_phone_number(phone_number)
-    time.sleep(4)
-    click_yes_button()
-    time.sleep(4)
-    check_and_click_continue_button()
-    time.sleep(4)
-    check_and_click_wrong_number_button()
-    time.sleep(5)
+    automate_login(selected_device,setup_data)
+    
+            
