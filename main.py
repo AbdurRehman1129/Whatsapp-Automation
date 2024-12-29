@@ -39,8 +39,9 @@ def setup_coordinates():
         "next_button": input("Next button coordinates (x,y): ").strip(),
         "yes_button": input("Yes button coordinates (x,y): ").strip(),
         "ok_button": input("OK button coordinates (x,y): ").strip(),
-        "wrong_number_1": input("Wrong number button coordinates (x,y): ").strip(),
-        "wrong_number_2": input("Wrong number 2 button coordinates (x,y): ").strip(),
+        "wrong_number_1": input("Wrong number (Waiting for) button coordinates (x,y): ").strip(),
+        "wrong_number_2": input("Wrong number (You've tried) button coordinates (x,y): ").strip(),
+        "wrong_number_3": input("Wrong number (Can't send) button coordinates (x,y): ").strip(),
         "continue_button": input("Continue button coordinates (x,y): ").strip()
     }
 
@@ -102,8 +103,10 @@ def is_wrong_number(device_id):
         xml_content = file.read()
     if "Waiting to automatically detect" in xml_content and "Wrong number?" in xml_content:
         return "Wrong Number 1"
-    elif "Can't send an SMS with your code because you've tried to register" in xml_content and "Wrong number?" in xml_content:
+    elif "You've tried to register" in xml_content and "Wrong number?" in xml_content:
         return "Wrong Number 2"
+    elif "Can't send an SMS with your code because you've tried to register" in xml_content and "Wrong number?" in xml_content:
+        return "Wrong Number 3"
     else:
         return None
     
@@ -115,6 +118,7 @@ def click_button(button,setup_data,device_id):
     ok_coords = tuple(map(int, setup_data["ok_button"].split(',')))
     wrong_1_coords = tuple(map(int, setup_data["wrong_number_1"].split(',')))
     wrong_2_coords = tuple(map(int, setup_data["wrong_number_2"].split(',')))
+    wrong_3_coords = tuple(map(int, setup_data["wrong_number_3"].split(',')))
     continue_coords = tuple(map(int, setup_data["continue_button"].split(',')))
 
     if button == "agree_button":
@@ -138,6 +142,9 @@ def click_button(button,setup_data,device_id):
     elif button == "wrong_number_2":
         print("Clicking the Wrong Number...")
         run_adb_command(f"adb -s {device_id} shell input tap {wrong_2_coords[0]} {wrong_2_coords[1]}")
+    elif button == "wrong_number_3":
+        print("Clicking the Wrong Number...")
+        run_adb_command(f"adb -s {device_id} shell input tap {wrong_3_coords[0]} {wrong_3_coords[1]}")
     elif button == "continue_button":
         print("Clicking the continue button...")
         run_adb_command(f"adb -s {device_id} shell input tap {continue_coords[0]} {continue_coords[1]}")
@@ -261,6 +268,8 @@ def check_and_click_wrong_number(setup_data,selected_device):
         click_button("wrong_number_1",setup_data,selected_device)
     elif is_wrong_number(selected_device) == "Wrong Number 2":
         click_button("wrong_number_2",setup_data,selected_device)
+    elif is_wrong_number(selected_device) == "Wrong Number 3":
+        click_button("wrong_number_3",setup_data,selected_device)
 
 
 def automate_login(selected_device,setup_data):
