@@ -9,7 +9,7 @@ def open_whatsapp_business(work_profile_id):
     subprocess.run(["adb", "shell", "am", "start", "--user", str(work_profile_id), "-n",
                    f"{package_name}/{activity_name}"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     print("WhatsApp Business has been successfully launched in the work profile.")
-    time.sleep(3)
+    time.sleep(2)
 
 
 def click_agree_and_continue():
@@ -255,14 +255,14 @@ click_agree_and_continue()
 numbers_input = input("Enter phone numbers separated by commas: ")
 phone_numbers = [number.strip() for number in numbers_input.split(",")]
 
-for phone_number in phone_numbers:
-    print(f"\nProcessing phone number: {phone_number}")
+for index,phone_number in enumerate(phone_numbers,start=1):
+    print(f"\n{index}. Processing phone number: {phone_number}")
     wrong_number_pressed = False
     enter_phone_number(phone_number)
-    time.sleep(4)
+    time.sleep(1)
     click_yes_button()
-    time.sleep(4)
+    time.sleep(1)
     check_and_click_continue_button()
-    time.sleep(4)
+    time.sleep(1)
     check_and_click_wrong_number_button()
-    time.sleep(5)
+    time.sleep(1)

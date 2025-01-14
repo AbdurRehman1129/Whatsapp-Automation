@@ -1,0 +1,24 @@
+{
+    "smart": {
+        "agree_button": "340,1517",
+        "number_input": "302,564",
+        "next_button": "344,1000",
+        "yes_button": "539,933",
+        "ok_button": "542,910",
+        "wrong_number_1": "593,268",
+        "wrong_number_2": "381,407",
+        "wrong_number_3": "381,407",
+        "continue_button": "360,1440"
+    },
+    "tecno": {
+        "agree_button": "570,2334",
+        "number_input": "481,799",
+        "next_button": "542,1561",
+        "yes_button": "820,1400",
+        "ok_button": "816,1386",
+        "wrong_number_1": "747,397",
+        "wrong_number_2": "692,454",
+        "wrong_number_3": "702,501",
+        "continue_button": "541,2214"
+    }
+}
