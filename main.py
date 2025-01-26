@@ -45,110 +45,56 @@ def setup_coordinates():
         "continue_button": input("Continue button coordinates (x,y): ").strip(),
         "cancel_button": input("Cancel (unable to connect) button coordinates (x,y): ").strip(),
         "submit_button": input("Submit (banned) button coordinates (x,y): ").strip(),
-        "three_dot": input("Three dot (banned) coordinates (x,y): ").strip(),
+        "three_button": input("Three dot (banned) coordinates (x,y): ").strip(),
         "register_button": input("Register new number (banned) button coordinates (x,y): ").strip()
     }
 
     setup_name = input("Enter a name for this setup: ").strip()
     save_setup(setup_name, setup_data)
 
-def is_check_status(device_id):
-    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
-    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
-    with open("window_dump.xml", "r", encoding="utf-8") as file:
-        xml_content = file.read()
-    return "Unable to connect." in xml_content
 
-def is_agree_button(device_id):
+def check_for(device_id,element):
     run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
     run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
     with open("window_dump.xml", "r", encoding="utf-8") as file:
         xml_content = file.read()
-    return "com.whatsapp.w4b:id/eula_accept" in xml_content
-
-def is_input_phone_field(device_id):
-    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
-    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
-    with open("window_dump.xml", "r", encoding="utf-8") as file:
-        xml_content = file.read()
-    return "com.whatsapp.w4b:id/registration_phone" in xml_content
-
-def is_yes_button(device_id):
-    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
-    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
-    with open("window_dump.xml", "r", encoding="utf-8") as file:
-        xml_content = file.read()
-    return "android:id/button1" in xml_content and "Yes" in xml_content
-
-def is_connecting_bar(device_id):
-    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
-    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
-    with open("window_dump.xml", "r", encoding="utf-8") as file:
-        xml_content = file.read()
-    return "Connecting..." in xml_content
-
-def is_continue_button(device_id):
-    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
-    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
-    with open("window_dump.xml", "r", encoding="utf-8") as file:
-        xml_content = file.read()
-    return "com.whatsapp.w4b:id/primary_button" in xml_content and "CONTINUE" in xml_content
-
-def is_sending_bar(device_id):
-    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
-    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
-    with open("window_dump.xml", "r", encoding="utf-8") as file:
-        xml_content = file.read()
-    return "Sending code" in xml_content
-
-def is_submit_bar(device_id):
-    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
-    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
-    with open("window_dump.xml", "r", encoding="utf-8") as file:
-        xml_content = file.read()
-    return "Submitting" in xml_content
-
-def is_one_hour(device_id):
-    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
-    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
-    with open("window_dump.xml", "r", encoding="utf-8") as file:
-        xml_content = file.read()
-    return "OK" in xml_content and "android:id/button1" in xml_content
-
-def is_wrong_number(device_id):
-    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
-    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
-    with open("window_dump.xml", "r", encoding="utf-8") as file:
-        xml_content = file.read()
-    if "Waiting to automatically detect" in xml_content and "Wrong number?" in xml_content:
-        return "Wrong Number 1"
-    elif "You've tried to register" in xml_content and "Wrong number?" in xml_content:
-        return "Wrong Number 2"
-    elif "Can't send an SMS with your code because you've tried to register" in xml_content and "Wrong number?" in xml_content:
-        return "Wrong Number 3"
+    if element == "banned" and ("REQUEST A REVIEW" in xml_content or "REGISTER NEW NUMBER" in xml_content or "CHECK REVIEW STATUS" in xml_content):
+        return True
+    elif element == "temp_ban" and "REQUEST A REVIEW" in xml_content:
+        return True
+    elif element == "perma_ban" and "REGISTER NEW NUMBER" in xml_content:
+        return True
+    elif element == "review_page" and "CHECK REVIEW STATUS" in xml_content:
+        return True
+    elif element == "check_status" and "Unable to connect." in xml_content:
+        return True
+    elif element == "Wrong_Number_1" and "Waiting to automatically detect" in xml_content and "Wrong number?" in xml_content:
+        return True
+    elif element == "Wrong_Number_2" and "You've tried to register" in xml_content and "Wrong number?" in xml_content:
+        return True
+    elif element == "Wrong_Number_3" and "Can't send an SMS with your code because you've tried to register" in xml_content and "Wrong number?" in xml_content:
+        return True
+    elif element == "one_hour" and "android:id/button1" in xml_content and "OK" in xml_content:
+        return True
+    elif element == "submit" and "Submitting" in xml_content:
+        return True
+    elif element == "register" and "REGISTER NEW NUMBER" in xml_content:
+        return True
+    elif element == "continue" and "CONTINUE" in xml_content and "com.whatsapp.w4b:id/primary_button" in xml_content:
+        return True
+    elif element == "yes" and "android:id/button1" in xml_content and "Yes" in xml_content:
+        return True
+    elif element == "agree" and "com.whatsapp.w4b:id/eula_accept" in xml_content:
+        return True
+    elif element == "sending" and "Sending code" in xml_content:
+        return True
+    elif element == "connecting" and "Connecting..." in xml_content:
+        return True
+    elif element == "input" and "com.whatsapp.w4b:id/registration_phone" in xml_content:
+        return True
     else:
-        return None
+        return False
 
-def is_number_temp_banned(device_id):
-    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
-    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
-    with open("window_dump.xml", "r", encoding="utf-8") as file:
-        xml_content = file.read()
-    return "REQUEST A REVIEW" in xml_content
-
-def is_number_perma_banned(device_id):
-    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
-    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
-    with open("window_dump.xml", "r", encoding="utf-8") as file:
-        xml_content = file.read()
-    return "REGISTER NEW NUMBER" in xml_content
-
-def is_review_page(device_id):
-    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
-    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
-    with open("window_dump.xml", "r", encoding="utf-8") as file:
-        xml_content = file.read()
-    return "CHECK REVIEW STATUS" in xml_content
 
 def click_button(button,setup_data,device_id):
     agree_coords = tuple(map(int, setup_data["agree_button"].split(',')))
@@ -164,8 +110,6 @@ def click_button(button,setup_data,device_id):
     register_coords = tuple(map(int, setup_data["register_button"].split(',')))
     three_coords = tuple(map(int, setup_data["three_dot"].split(',')))
     cancel_coords = tuple(map(int, setup_data["cancel_button"].split(',')))
-
-
 
     if button == "agree_button":
         print("Clicking the agree button...")
@@ -244,8 +188,6 @@ def open_whatsapp_business(device_id, work_profile_id=None):
         profile_prefix = f"--user {work_profile_id} "
     else:
         profile_prefix = ""
-
-    # Use 'am start' instead of 'monkey' for better control
     command = f"adb -s {device_id} shell am start {profile_prefix}-n com.whatsapp.w4b/com.whatsapp.Main"
     result = run_adb_command(command)  # Use the helper function here
     if result == 0:
@@ -253,15 +195,17 @@ def open_whatsapp_business(device_id, work_profile_id=None):
     else:
         print("Failed to launch WhatsApp Business.")
 
+
+
 def check_and_click_agree_button(selected_device,setup_data):
-    while(True):
-        if is_agree_button(selected_device):
+    
+        if check_for(selected_device,"agree"):
             click_button("agree_button",setup_data,selected_device)
-            break
+            
 
 def check_and_click_input_number(selected_device,setup_data):
     while(True):
-        if is_input_phone_field(selected_device):
+        if check_for(selected_device,"input"):
             click_button("number_input",setup_data,selected_device)
             break
 
@@ -269,33 +213,29 @@ def enter_phone_number(selected_device,phone_number):
     print(f"Entering phone number +994{phone_number}")
     run_adb_command(f"adb -s {selected_device} shell input text {phone_number}")
 
-def click_next_button(selected_device,setup_data):
-    click_button("next_button",setup_data,selected_device)
-            
 def wait_for_connecting_bar_to_disappear(selected_device):
     while(True):
-        if not is_connecting_bar(selected_device):
+        if not check_for(selected_device,"connecting"):
             break
 
 def wait_for_submit_bar_to_disppear(selected_device):
     while(True):
-        if not is_submit_bar(selected_device):
+        if not check_for(selected_device,"submit"):
             break
 
 def check_and_click_yes_button(selected_device,setup_data):
     while(True):
-        if is_yes_button(selected_device):
+        if check_for(selected_device,"yes"):
             click_button("yes_button",setup_data,selected_device)
             break
 
 def check_and_click_continue_button(selected_device,setup_data):
-    
-    if is_continue_button(selected_device):
+    if check_for(selected_device,"continue"):
         click_button("continue_button",setup_data,selected_device)
     
 def wait_for_sending_bar_to_disappear(selected_device):
     while(True):
-        if not is_sending_bar(selected_device):
+        if not check_for(selected_device,"sending"):
             break
 
 def save_processed_number(phone_number,otp_status):
@@ -330,16 +270,8 @@ def save_processed_number(phone_number,otp_status):
     with open(file_name, "w") as file:
         json.dump(data, file, indent=4)
 
-def is_number_banned(device_id):
-    if is_number_temp_banned(device_id):
-        return True
-    elif is_number_perma_banned(device_id):
-        return True
-    elif is_review_page(device_id):
-        return True
-    
 def check_and_managed_banned_numbers(device_id,setup_data,selected_device,phone_number):
-    if is_number_temp_banned(device_id):
+    if check_for(device_id,"temp_ban"):
         print("Number is Temp Banned.")
         click_button("agree_button",setup_data,selected_device)
         time.sleep(0.1)
@@ -350,12 +282,12 @@ def check_and_managed_banned_numbers(device_id,setup_data,selected_device,phone_
         click_button("register_button",setup_data,selected_device)
         check_and_click_agree_button(selected_device,setup_data)
         save_processed_number(phone_number,"Banned_Requested")
-    elif is_number_perma_banned(device_id):
+    elif check_for(device_id,"perma_ban"):
         print("Number is Perma Banned.")
         click_button("agree_button",setup_data,selected_device) 
         check_and_click_agree_button(selected_device,setup_data)
         save_processed_number(phone_number,"Permanant_Banned") 
-    elif is_review_page(device_id):
+    elif check_for(device_id,"review_page"):
         print("Already requested.")
         click_button("three_dot",setup_data,selected_device)
         time.sleep(0.1)
@@ -364,55 +296,60 @@ def check_and_managed_banned_numbers(device_id,setup_data,selected_device,phone_
         save_processed_number(phone_number,"Already_Requested") 
 
 def check_if_one_hour_came(setup_data, selected_device, phone_number):
-    if is_one_hour(selected_device):
+    if check_for(selected_device,"one_hour"):
         click_button("ok_button", setup_data, selected_device)
         save_processed_number(phone_number,"Failed")
-    elif is_wrong_number(selected_device) == "Wrong Number 2" or is_wrong_number(selected_device) == "Wrong Number 3":
+    elif check_for(selected_device,"Wrong_Number_2") or check_for(selected_device,"Wrong_Number_3"):
         print("Number was already tried....")
         save_processed_number(phone_number,"Already_Tried")
 
-    elif is_wrong_number(selected_device) == "Wrong Number 1":
+    elif check_for(selected_device,"Wrong_Number_1"):
         print("OTP Sent....")
         save_processed_number(phone_number,"Sent")
 
 def check_and_click_wrong_number(setup_data,selected_device):
-    if is_wrong_number(selected_device) == "Wrong Number 1":
-        click_button("wrong_number_1",setup_data,selected_device)
-    if is_wrong_number(selected_device) == "Wrong Number 2":
-        click_button("wrong_number_2",setup_data,selected_device)
-    if is_wrong_number(selected_device) == "Wrong Number 3":
-        click_button("wrong_number_3",setup_data,selected_device)
+    while(True):    
+        if check_for(selected_device,"Wrong_Number_1"):
+            click_button("wrong_number_1",setup_data,selected_device)
+            break
+        elif check_for(selected_device,"Wrong_Number_2"):
+            click_button("wrong_number_2",setup_data,selected_device)
+            break
+        elif check_for(selected_device,"Wrong_Number_3"):
+            click_button("wrong_number_3",setup_data,selected_device)
+            break
 
 def manage_check(device_id,setup_data,element,phone_number,index):
-    if element == "first" and is_check_status(device_id):
+    if element == "first" and check_for(device_id,"check_status"):
         click_button("cancel_button",setup_data,device_id)
-        click_next_button(device_id,setup_data)
+        click_button("next_button",setup_data,selected_device)
         wait_for_connecting_bar_to_disappear(device_id)
         manage_check(device_id,setup_data,"first")
-    elif element == "second" and is_check_status(device_id):
+    elif element == "second" and check_for(device_id,"check_status"):
         click_button("cancel_button",setup_data,device_id)
         check_and_click_wrong_number(setup_data,device_id)
         automate(selected_device,setup_data,phone_number,index)
-        
+
+
 def automate(selected_device,setup_data,phone_number,index):
     clear_screen()
     print(f"{index}. Processing phone number +994{phone_number}")
     check_and_click_input_number(selected_device,setup_data)
     enter_phone_number(selected_device,phone_number)
-    click_next_button(selected_device,setup_data)
+    click_button("next_button",setup_data,selected_device)
     wait_for_connecting_bar_to_disappear(selected_device)
-    if is_check_status(selected_device):
-        manage_check(selected_device,setup_data,"first",phone_number,index)
-    if is_number_banned(selected_device):
-        check_and_managed_banned_numbers(selected_device,setup_data,selected_device,phone_number)
+    if check_for(selected_device, "yes"):
+        check_and_click_yes_button(selected_device, setup_data)
+    elif check_for(selected_device, "banned"):
+        check_and_managed_banned_numbers(selected_device, setup_data, selected_device, phone_number)
         return
-    elif is_yes_button(selected_device):
-        check_and_click_yes_button(selected_device,setup_data)
+    elif check_for(selected_device, "check_status"):
+        manage_check(selected_device, setup_data, "first", phone_number, index)
     check_and_click_continue_button(selected_device,setup_data)
     wait_for_sending_bar_to_disappear(selected_device)
-    if is_check_status(selected_device):    
-        manage_check(selected_device,setup_data,"second",phone_number,index)
-    check_if_one_hour_came(setup_data,selected_device,phone_number)
+    if check_for(selected_device, "check_status"):
+        manage_check(selected_device, setup_data, "second", phone_number, index) 
+    check_if_one_hour_came(setup_data, selected_device, phone_number)
     check_and_click_wrong_number(setup_data,selected_device)
 
 def automate_login(selected_device,setup_data):
