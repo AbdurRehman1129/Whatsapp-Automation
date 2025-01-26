@@ -45,7 +45,7 @@ def setup_coordinates():
         "continue_button": input("Continue button coordinates (x,y): ").strip(),
         "cancel_button": input("Cancel (unable to connect) button coordinates (x,y): ").strip(),
         "submit_button": input("Submit (banned) button coordinates (x,y): ").strip(),
-        "three_button": input("Three dot (banned) coordinates (x,y): ").strip(),
+        "three_dot": input("Three dot (banned) coordinates (x,y): ").strip(),
         "register_button": input("Register new number (banned) button coordinates (x,y): ").strip()
     }
 
