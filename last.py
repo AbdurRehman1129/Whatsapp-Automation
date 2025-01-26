@@ -6,7 +6,6 @@ import argparse
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
-# Function to save the setup configuration
 def save_setup(setup_name, setup_data):
     setups = load_setups()
     setups[setup_name] = setup_data
