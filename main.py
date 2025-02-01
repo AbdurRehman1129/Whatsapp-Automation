@@ -86,7 +86,7 @@ def is_connecting_bar(device_id):
     run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
     with open("window_dump.xml", "r", encoding="utf-8") as file:
         xml_content = file.read()
-    return "Connecting..." in xml_content
+    return "Connecting" in xml_content
 
 def is_continue_button(device_id):
     run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
@@ -285,8 +285,13 @@ def click_next_button(selected_device,setup_data):
     click_button("next_button",setup_data,selected_device)
             
 def wait_for_connecting_bar_to_disappear(selected_device):
+    print("Waiting for connecting bar to disappear...", end='', flush=True)
     while(True):
+        time.sleep(0.5)
         if not is_connecting_bar(selected_device):
+            print("\r" + " " * len("Waiting for connecting bar to disappear..."), end='', flush=True)
+            print("\rConnecting bar disappeared...")
+            time.sleep(0.5)
             break
 
 def wait_for_submit_bar_to_disppear(selected_device):
@@ -307,10 +312,15 @@ def check_and_click_continue_button(selected_device,setup_data):
         click_button("continue_button",setup_data,selected_device)
     
 def wait_for_sending_bar_to_disappear(selected_device):
+    print("Waiting for Sending bar to disappear...", end='', flush=True)
     while(True):
+        time.sleep(0.5)
         if not is_sending_bar(selected_device):
+            print("\r" + " " * len("Waiting for sending bar to disappear..."), end='', flush=True)
+            print("\rSending bar disappeared...")
+            time.sleep(0.5)
             break
-
+    
 def save_processed_number(phone_number,otp_status):
     file_name = "processed_numbers.json"
     current_time = datetime.now()
@@ -389,12 +399,16 @@ def check_if_one_hour_came(setup_data, selected_device, phone_number):
         save_processed_number(phone_number,"Sent")
 
 def check_and_click_wrong_number(setup_data,selected_device):
-    if is_wrong_number(selected_device) == "Wrong Number 1":
-        click_button("wrong_number_1",setup_data,selected_device)
-    if is_wrong_number(selected_device) == "Wrong Number 2":
-        click_button("wrong_number_2",setup_data,selected_device)
-    if is_wrong_number(selected_device) == "Wrong Number 3":
-        click_button("wrong_number_3",setup_data,selected_device)
+    while True:
+        if is_wrong_number(selected_device) == "Wrong Number 1":
+            click_button("wrong_number_1",setup_data,selected_device)
+            break
+        elif is_wrong_number(selected_device) == "Wrong Number 2":
+            click_button("wrong_number_2",setup_data,selected_device)
+            break
+        elif is_wrong_number(selected_device) == "Wrong Number 3":
+            click_button("wrong_number_3",setup_data,selected_device)
+            break
 
 def manage_check(device_id,setup_data,element,phone_number,index):
     if element == "first" and is_check_status(device_id):
@@ -406,7 +420,32 @@ def manage_check(device_id,setup_data,element,phone_number,index):
         click_button("cancel_button",setup_data,device_id)
         check_and_click_wrong_number(setup_data,device_id)
         automate(selected_device,setup_data,phone_number,index)
-        
+
+def manage_this(selected_device,setup_data,index,phone_number):
+    while True:
+        if is_yes_button(selected_device):
+            click_button("yes_button",setup_data,selected_device)
+            break
+        elif is_continue_button_1(selected_device):
+            click_button("continue_button_2",setup_data,selected_device)
+            break
+        elif is_number_banned(selected_device):
+            check_and_managed_banned_numbers(selected_device,setup_data,phone_number)
+            return
+        elif is_check_status(selected_device):
+            manage_check(selected_device,setup_data,"first",phone_number,index)
+            break
+
+def manage_last(setup_data,selected_device,phone_number,index):
+    while True:
+        if is_one_hour(selected_device):
+            check_if_one_hour_came(setup_data,selected_device,phone_number)
+            break
+        elif is_check_status(selected_device):    
+            manage_check(selected_device,setup_data,"second",phone_number,index)
+            break
+        time.sleep(0.5)
+    
 def automate(selected_device,setup_data,phone_number,index):
     clear_screen()
     print(f"{index}. Processing phone number +994{phone_number}")
@@ -414,21 +453,11 @@ def automate(selected_device,setup_data,phone_number,index):
     enter_phone_number(selected_device,phone_number)
     click_next_button(selected_device,setup_data)
     wait_for_connecting_bar_to_disappear(selected_device)
-    if is_yes_button(selected_device):
-        click_button("yes_button",setup_data,selected_device)
-    elif is_continue_button_1(selected_device):
-        click_button("continue_button_2",setup_data,selected_device)
-    elif is_number_banned(selected_device):
-        check_and_managed_banned_numbers(selected_device,setup_data,selected_device,phone_number)
-        return
-    elif is_check_status(selected_device):
-        manage_check(selected_device,setup_data,"first",phone_number,index)
-    
+    time.sleep(0.5)
+    manage_this(selected_device,setup_data,index,phone_number)
     check_and_click_continue_button(selected_device,setup_data)
     wait_for_sending_bar_to_disappear(selected_device)
-    if is_check_status(selected_device):    
-        manage_check(selected_device,setup_data,"second",phone_number,index)
-    check_if_one_hour_came(setup_data,selected_device,phone_number)
+    manage_last(setup_data,selected_device,phone_number,index)
     check_and_click_wrong_number(setup_data,selected_device)
 
 def automate_login(selected_device,setup_data):
