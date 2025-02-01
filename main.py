@@ -438,13 +438,17 @@ def manage_this(selected_device,setup_data,index,phone_number):
 
 def manage_last(setup_data,selected_device,phone_number,index):
     while True:
-        if is_one_hour(selected_device):
-            check_if_one_hour_came(setup_data,selected_device,phone_number)
-            break
-        elif is_check_status(selected_device):    
-            manage_check(selected_device,setup_data,"second",phone_number,index)
-            break
-        time.sleep(0.5)
+        for i in range(1):
+            if is_one_hour(selected_device):
+                check_if_one_hour_came(setup_data,selected_device,phone_number)
+                break
+            elif is_check_status(selected_device):    
+                manage_check(selected_device,setup_data,"second",phone_number,index)
+                break
+            else:
+                continue
+        break
+            
     
 def automate(selected_device,setup_data,phone_number,index):
     clear_screen()
@@ -456,7 +460,8 @@ def automate(selected_device,setup_data,phone_number,index):
     time.sleep(0.5)
     manage_this(selected_device,setup_data,index,phone_number)
     check_and_click_continue_button(selected_device,setup_data)
-    wait_for_sending_bar_to_disappear(selected_device)
+    if is_sending_bar(selected_device):
+        wait_for_sending_bar_to_disappear(selected_device)
     manage_last(setup_data,selected_device,phone_number,index)
     check_and_click_wrong_number(setup_data,selected_device)
 
