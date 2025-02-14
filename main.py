@@ -60,6 +60,13 @@ def is_check_status(device_id):
         xml_content = file.read()
     return "Unable to connect." in xml_content
 
+def is_login_not_available(device_id):
+    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
+    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
+    with open("window_dump.xml", "r", encoding="utf-8") as file:
+        xml_content = file.read()
+    return "Login not available right now" in xml_content
+
 def is_agree_button(device_id):
     run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
     run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
@@ -270,6 +277,8 @@ def check_and_click_agree_button(selected_device,setup_data):
         if is_agree_button(selected_device):
             click_button("agree_button",setup_data,selected_device)
             break
+    if use_different_number(selected_device):
+        click_button("agree_button",setup_data,selected_device)
 
 def check_and_click_input_number(selected_device,setup_data):
     while(True):
@@ -361,8 +370,8 @@ def is_number_banned(device_id):
     elif is_review_page(device_id):
         return True
     
-def check_and_managed_banned_numbers(device_id,setup_data,selected_device,phone_number):
-    if is_number_temp_banned(device_id):
+def check_and_managed_banned_numbers(setup_data,selected_device,phone_number):
+    if is_number_temp_banned(selected_device):
         print("Number is Temp Banned.")
         click_button("agree_button",setup_data,selected_device)
         time.sleep(0.1)
@@ -373,12 +382,12 @@ def check_and_managed_banned_numbers(device_id,setup_data,selected_device,phone_
         click_button("register_button",setup_data,selected_device)
         check_and_click_agree_button(selected_device,setup_data)
         save_processed_number(phone_number,"Banned_Requested")
-    elif is_number_perma_banned(device_id):
+    elif is_number_perma_banned(selected_device):
         print("Number is Perma Banned.")
         click_button("agree_button",setup_data,selected_device) 
         check_and_click_agree_button(selected_device,setup_data)
         save_processed_number(phone_number,"Permanant_Banned") 
-    elif is_review_page(device_id):
+    elif is_review_page(selected_device):
         print("Already requested.")
         click_button("three_dot",setup_data,selected_device)
         time.sleep(0.1)
@@ -436,7 +445,20 @@ def manage_this(selected_device,setup_data,index,phone_number):
             manage_check(selected_device,setup_data,"first",phone_number,index)
             break
 
-def manage_last(setup_data,selected_device,phone_number,index):
+def use_different_number(device_id):
+    run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
+    run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
+    with open("window_dump.xml", "r", encoding="utf-8") as file:
+        xml_content = file.read()
+    return "USE A DIFFERENT NUMBER" in xml_content
+
+def close_and_open_whatsapp(selected_device,work_profile_id=None):
+    run_adb_command(f"adb -s {selected_device} shell am force-stop com.whatsapp.w4b")
+    time.sleep(1)
+    open_whatsapp_business(selected_device,work_profile_id=work_profile_id)
+
+def manage_last(setup_data,selected_device,phone_number,index,work_profile_id):
+    login_not_available = False
     while True:
         for i in range(1):
             if is_one_hour(selected_device):
@@ -445,14 +467,23 @@ def manage_last(setup_data,selected_device,phone_number,index):
             elif is_check_status(selected_device):    
                 manage_check(selected_device,setup_data,"second",phone_number,index)
                 break
+            elif is_login_not_available(selected_device): 
+                print("Login not available right now.")
+                print("Closing and opening WhatsApp...")   
+                close_and_open_whatsapp(selected_device,work_profile_id)
+                check_and_click_agree_button(selected_device,setup_data)
+                save_processed_number(phone_number,"Login_Not_Available")
+                login_not_available = True
+                return login_not_available
+
             else:
                 continue
         break
             
     
-def automate(selected_device,setup_data,phone_number,index):
+def automate(selected_device,setup_data,phone_number,index,work_profile_id,total):
     clear_screen()
-    print(f"{index}. Processing phone number +994{phone_number}")
+    print(f"{index}/{total}. Processing phone number +994{phone_number}")
     check_and_click_input_number(selected_device,setup_data)
     enter_phone_number(selected_device,phone_number)
     click_next_button(selected_device,setup_data)
@@ -462,17 +493,20 @@ def automate(selected_device,setup_data,phone_number,index):
     check_and_click_continue_button(selected_device,setup_data)
     if is_sending_bar(selected_device):
         wait_for_sending_bar_to_disappear(selected_device)
-    manage_last(setup_data,selected_device,phone_number,index)
+    time.sleep(0.5)
+    login_not_available = manage_last(setup_data, selected_device, phone_number, index,work_profile_id)
+    if login_not_available:
+        return
     check_and_click_wrong_number(setup_data,selected_device)
 
-def automate_login(selected_device,setup_data):
-    
-    check_and_click_agree_button(selected_device,setup_data)
-
+def automate_login(selected_device,setup_data,work_profile_id):
     phone_numbers = input("Enter phone numbers separated by commas: ").split(',')
     phone_numbers = [phone_number.strip() for phone_number in phone_numbers if phone_number.strip()]
+    total = len(phone_numbers)
+    check_and_click_agree_button(selected_device,setup_data)
     for index,phone_number in enumerate(phone_numbers,start=1):
-        automate(selected_device,setup_data,phone_number,index)
+        automate(selected_device,setup_data,phone_number,index,work_profile_id,total)
+
 
 if __name__ == "__main__":
     clear_screen()
@@ -516,12 +550,12 @@ if __name__ == "__main__":
         print(f"Work profile detected with ID: {work_profile_id}")
         profile_choice = input("Open WhatsApp Business in (1) Main Profile or (2) Work Profile? ").strip()
         if profile_choice == "2":
-            open_whatsapp_business(selected_device, work_profile_id)
+            close_and_open_whatsapp(selected_device,work_profile_id)
         else:
-            open_whatsapp_business(selected_device)
+            close_and_open_whatsapp(selected_device,work_profile_id=None)
     else:
         print("No work profile detected. Launching WhatsApp Business in the main profile.")
-        open_whatsapp_business(selected_device)
+        close_and_open_whatsapp(selected_device,work_profile_id=None)
 
 
-    automate_login(selected_device,setup_data)
+    automate_login(selected_device,setup_data,work_profile_id)
