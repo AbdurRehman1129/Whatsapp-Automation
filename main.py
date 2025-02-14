@@ -370,30 +370,33 @@ def is_number_banned(device_id):
     elif is_review_page(device_id):
         return True
     
-def check_and_managed_banned_numbers(setup_data,selected_device,phone_number):
+def check_and_managed_banned_numbers(setup_data, selected_device, phone_number):
     if is_number_temp_banned(selected_device):
         print("Number is Temp Banned.")
-        click_button("agree_button",setup_data,selected_device)
+        click_button("agree_button", setup_data, selected_device)  # Fixed order
         time.sleep(0.1)
-        click_button("submit_button",setup_data,selected_device)
+        click_button("submit_button", setup_data, selected_device)  # Fixed order
         wait_for_submit_bar_to_disppear(selected_device)
-        click_button("three_dot",setup_data,selected_device)
+        click_button("three_dot", setup_data, selected_device)  # Fixed order
         time.sleep(0.1)
-        click_button("register_button",setup_data,selected_device)
-        check_and_click_agree_button(selected_device,setup_data)
-        save_processed_number(phone_number,"Banned_Requested")
+        click_button("register_button", setup_data, selected_device)  # Fixed order
+        check_and_click_agree_button(selected_device, setup_data)
+        save_processed_number(phone_number, "Banned_Requested")
+        return
     elif is_number_perma_banned(selected_device):
         print("Number is Perma Banned.")
-        click_button("agree_button",setup_data,selected_device) 
-        check_and_click_agree_button(selected_device,setup_data)
-        save_processed_number(phone_number,"Permanant_Banned") 
+        click_button("agree_button", setup_data, selected_device)  # Fixed order
+        check_and_click_agree_button(selected_device, setup_data)
+        save_processed_number(phone_number, "Permanant_Banned")
+        return
     elif is_review_page(selected_device):
         print("Already requested.")
-        click_button("three_dot",setup_data,selected_device)
+        click_button("three_dot", setup_data, selected_device)  # Fixed order
         time.sleep(0.1)
-        click_button("register_button",setup_data,selected_device)
-        check_and_click_agree_button(selected_device,setup_data)        
-        save_processed_number(phone_number,"Already_Requested") 
+        click_button("register_button", setup_data, selected_device)  # Fixed order
+        check_and_click_agree_button(selected_device, setup_data)
+        save_processed_number(phone_number, "Already_Requested")
+        return
 
 def check_if_one_hour_came(setup_data, selected_device, phone_number):
     if is_one_hour(selected_device):
@@ -431,6 +434,7 @@ def manage_check(device_id,setup_data,element,phone_number,index):
         automate(selected_device,setup_data,phone_number,index)
 
 def manage_this(selected_device,setup_data,index,phone_number):
+    banned = False
     while True:
         if is_yes_button(selected_device):
             click_button("yes_button",setup_data,selected_device)
@@ -439,12 +443,14 @@ def manage_this(selected_device,setup_data,index,phone_number):
             click_button("continue_button_2",setup_data,selected_device)
             break
         elif is_number_banned(selected_device):
-            check_and_managed_banned_numbers(selected_device,setup_data,phone_number)
-            return
+            banned = True
+            check_and_managed_banned_numbers(setup_data, selected_device, phone_number)
+            print("Number is banned and its work is completed.")
+            return banned
         elif is_check_status(selected_device):
             manage_check(selected_device,setup_data,"first",phone_number,index)
             break
-
+    
 def use_different_number(device_id):
     run_adb_command(f"adb -s {device_id} shell uiautomator dump /sdcard/window_dump.xml")
     run_adb_command(f"adb -s {device_id} pull /sdcard/window_dump.xml .")
@@ -458,9 +464,8 @@ def close_and_open_whatsapp(selected_device,work_profile_id=None):
     open_whatsapp_business(selected_device,work_profile_id=work_profile_id)
 
 def manage_last(setup_data,selected_device,phone_number,index,work_profile_id):
-    login_not_available = False
     while True:
-        for i in range(1):
+        
             if is_one_hour(selected_device):
                 check_if_one_hour_came(setup_data,selected_device,phone_number)
                 break
@@ -473,12 +478,14 @@ def manage_last(setup_data,selected_device,phone_number,index,work_profile_id):
                 close_and_open_whatsapp(selected_device,work_profile_id)
                 check_and_click_agree_button(selected_device,setup_data)
                 save_processed_number(phone_number,"Login_Not_Available")
-                login_not_available = True
+                login_not_available = "login_not_available"
                 return login_not_available
-
+            elif is_wrong_number(selected_device):
+                check_and_click_wrong_number(setup_data,selected_device)
+                wrong_number = "wrong_number"
+                return wrong_number
             else:
                 continue
-        break
             
     
 def automate(selected_device,setup_data,phone_number,index,work_profile_id,total):
@@ -489,13 +496,15 @@ def automate(selected_device,setup_data,phone_number,index,work_profile_id,total
     click_next_button(selected_device,setup_data)
     wait_for_connecting_bar_to_disappear(selected_device)
     time.sleep(0.5)
-    manage_this(selected_device,setup_data,index,phone_number)
+    banned = manage_this(selected_device,setup_data,index,phone_number)
+    if banned:
+        return
     check_and_click_continue_button(selected_device,setup_data)
     if is_sending_bar(selected_device):
         wait_for_sending_bar_to_disappear(selected_device)
     time.sleep(0.5)
-    login_not_available = manage_last(setup_data, selected_device, phone_number, index,work_profile_id)
-    if login_not_available:
+    something = manage_last(setup_data, selected_device, phone_number, index,work_profile_id)
+    if something == "login_not_available" or something == "wrong_number":
         return
     check_and_click_wrong_number(setup_data,selected_device)
 
