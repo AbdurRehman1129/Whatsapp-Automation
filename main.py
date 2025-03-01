@@ -4,6 +4,7 @@ import json
 import argparse
 import time
 from datetime import datetime
+import threading 
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -361,6 +362,8 @@ def save_processed_number(phone_number,otp_status):
     # Save updated data back to the file
     with open(file_name, "w") as file:
         json.dump(data, file, indent=4)
+    
+    print(f"Phone number saved with {otp_status}.")
 
 def is_number_banned(device_id):
     if is_number_temp_banned(device_id):
@@ -399,18 +402,30 @@ def check_and_managed_banned_numbers(setup_data, selected_device, phone_number):
         return
 
 def check_if_one_hour_came(setup_data, selected_device, phone_number):
+
     if is_one_hour(selected_device):
         click_button("ok_button", setup_data, selected_device)
-        save_processed_number(phone_number,"Failed")
-    elif is_wrong_number(selected_device) == "Wrong Number 2" or is_wrong_number(selected_device) == "Wrong Number 3":
-        print("Number was already tried....")
-        save_processed_number(phone_number,"Already_Tried")
-
-    elif is_wrong_number(selected_device) == "Wrong Number 1":
-        print("OTP Sent....")
-        save_processed_number(phone_number,"Sent")
-
-def check_and_click_wrong_number(setup_data,selected_device):
+        save_processed_number(phone_number,"One_Hour")
+ 
+def check_and_click_wrong_number(setup_data,selected_device,phone_number):
+    while True:
+        if is_wrong_number(selected_device) == "Wrong Number 1":
+            print(f"OTP Sent..")
+            threading.Thread(target=save_processed_number, args=(phone_number, "OTP_Sent")).start()
+            click_button("wrong_number_1",setup_data,selected_device)
+            break
+        elif is_wrong_number(selected_device) == "Wrong Number 2":
+            print(f"Already Tried..")
+            threading.Thread(target=save_processed_number, args=(phone_number, "Already_Tried")).start()
+            click_button("wrong_number_2",setup_data,selected_device)
+            break
+        elif is_wrong_number(selected_device) == "Wrong Number 3":
+            print(f"Already Tried..")
+            threading.Thread(target=save_processed_number, args=(phone_number, "Already_Tried")).start()
+            click_button("wrong_number_3",setup_data,selected_device)
+            break
+ 
+def check_and_click_wrong_number_last(setup_data,selected_device,phone_number):
     while True:
         if is_wrong_number(selected_device) == "Wrong Number 1":
             click_button("wrong_number_1",setup_data,selected_device)
@@ -422,6 +437,7 @@ def check_and_click_wrong_number(setup_data,selected_device):
             click_button("wrong_number_3",setup_data,selected_device)
             break
 
+
 def manage_check(device_id,setup_data,element,phone_number,index):
     if element == "first" and is_check_status(device_id):
         click_button("cancel_button",setup_data,device_id)
@@ -430,7 +446,7 @@ def manage_check(device_id,setup_data,element,phone_number,index):
         manage_check(device_id,setup_data,"first")
     elif element == "second" and is_check_status(device_id):
         click_button("cancel_button",setup_data,device_id)
-        check_and_click_wrong_number(setup_data,device_id)
+        check_and_click_wrong_number(setup_data,device_id,phone_number)
         automate(selected_device,setup_data,phone_number,index)
 
 def manage_this(selected_device,setup_data,index,phone_number):
@@ -468,22 +484,25 @@ def manage_last(setup_data,selected_device,phone_number,index,work_profile_id):
         
             if is_one_hour(selected_device):
                 check_if_one_hour_came(setup_data,selected_device,phone_number)
-                break
+                one_hour = "one_hour"
+                return one_hour
+            elif is_wrong_number(selected_device):
+                check_and_click_wrong_number(setup_data,selected_device,phone_number)
+                wrong_number = "wrong_number"
+                return wrong_number
             elif is_check_status(selected_device):    
                 manage_check(selected_device,setup_data,"second",phone_number,index)
                 break
             elif is_login_not_available(selected_device): 
                 print("Login not available right now.")
+                save_processed_number(phone_number,"Login_Not_Available")
                 print("Closing and opening WhatsApp...")   
                 close_and_open_whatsapp(selected_device,work_profile_id)
                 check_and_click_agree_button(selected_device,setup_data)
-                save_processed_number(phone_number,"Login_Not_Available")
+                
                 login_not_available = "login_not_available"
                 return login_not_available
-            elif is_wrong_number(selected_device):
-                check_and_click_wrong_number(setup_data,selected_device)
-                wrong_number = "wrong_number"
-                return wrong_number
+            
             else:
                 continue
             
@@ -506,7 +525,8 @@ def automate(selected_device,setup_data,phone_number,index,work_profile_id,total
     something = manage_last(setup_data, selected_device, phone_number, index,work_profile_id)
     if something == "login_not_available" or something == "wrong_number":
         return
-    check_and_click_wrong_number(setup_data,selected_device)
+    elif something == "one_hour":
+        check_and_click_wrong_number_last(setup_data,selected_device,phone_number)
 
 def automate_login(selected_device,setup_data,work_profile_id):
     phone_numbers = input("Enter phone numbers separated by commas: ").split(',')
