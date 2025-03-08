@@ -443,7 +443,7 @@ def manage_check(device_id,setup_data,element,phone_number,index):
         click_button("cancel_button",setup_data,device_id)
         click_next_button(device_id,setup_data)
         wait_for_connecting_bar_to_disappear(device_id)
-        manage_check(device_id,setup_data,"first")
+        manage_check(device_id,setup_data,"first",phone_number,index)
     elif element == "second" and is_check_status(device_id):
         click_button("cancel_button",setup_data,device_id)
         check_and_click_wrong_number(setup_data,device_id,phone_number)
